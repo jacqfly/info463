@@ -1,101 +1,384 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Bubble Frequency Visualizer</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      margin: 0;
-      padding: 0;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predictive Keyboard</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #2a2a2a;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
 
-    #textInput {
-      width: 100%;
-      height: 100px;
-      font-size: 18px;
-      padding: 10px;
-      box-sizing: border-box;
-    }
+        #text-display {
+            font-size: 28px;
+            height: 50px;
+            margin-bottom: 40px;
+            padding: 10px;
+            background-color: #333;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 600px;
+            text-align: center;
+        }
 
-    #canvas {
-      position: relative;
-      width: 100%;
-      height: calc(100vh - 100px);
-      background: #f0f0f0;
-      overflow: hidden;
-    }
+        #predictions {
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: #ccc;
+        }
 
-    .bubble {
-      position: absolute;
-      border-radius: 50%;
-      background-color: rgba(0, 150, 255, 0.6);
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-      transition: transform 0.3s ease;
-      cursor: pointer;
-      user-select: none;
-    }
-  </style>
+        #keyboard {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 80%;
+            max-width: 700px;
+        }
+
+        .keyboard-row {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .key {
+            background-color: #444;
+            border: 1px solid #555;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            width: 40px;
+            height: 40px;
+        }
+        
+        .key:hover {
+            background-color: #555;
+        }
+        
+        .key:active {
+            background-color: #666;
+            transform: translateY(2px);
+        }
+
+        #instructions {
+            margin-top: 30px;
+            font-size: 16px;
+            color: #aaa;
+            text-align: center;
+        }
+
+        .spacebar {
+            width: 200px;
+        }
+
+        .backspace {
+            width: 80px;
+        }
+    </style>
 </head>
 <body>
-  <textarea id="textInput" placeholder="Type here..."></textarea>
-  <div id="canvas"></div>
+    <div id="text-display">|</div>
+    <div id="predictions">Predictions: </div>
+    <div id="keyboard">
+        <div class="keyboard-row" id="row1"></div>
+        <div class="keyboard-row" id="row2"></div>
+        <div class="keyboard-row" id="row3"></div>
+        <div class="keyboard-row">
+            <div class="key backspace" id="backspace">⌫</div>
+            <div class="key spacebar" id="space">Space</div>
+            <div class="key backspace" id="clear">Clear</div>
+        </div>
+    </div>
+    <div id="instructions">
+        Type using your keyboard or click the virtual keys<br>
+        Larger keys = predicted next letters
+    </div>
 
-  <script>
-    const textInput = document.getElementById('textInput');
-    const canvas = document.getElementById('canvas');
-
-    let frequencies = {};
-
-    function updateBubbles() {
-      canvas.innerHTML = ''; // Clear old bubbles
-      const total = Object.values(frequencies).reduce((a, b) => a + b, 0);
-
-      Object.entries(frequencies).forEach(([char, freq], i) => {
-        const size = 30 + (freq / total) * 100; // Scale size based on frequency
-
-        const bubble = document.createElement('div');
-        bubble.className = 'bubble';
-        bubble.innerText = char;
-        bubble.style.width = `${size}px`;
-        bubble.style.height = `${size}px`;
-
-        // Random horizontal position
-        const x = Math.random() * (canvas.clientWidth - size);
-        const y = canvas.clientHeight - size;
-
-        bubble.style.left = `${x}px`;
-        bubble.style.top = `${y}px`;
-
-        // Insert letter when bubble is clicked
-        bubble.onclick = () => {
-          textInput.value += char;
-          updateFrequencies(textInput.value);
+    <script>
+        // Current text state
+        let currentText = "";
+        
+        // Keyboard layout
+        const keyboardLayout = [
+            ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+            ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
+            ['z', 'x', 'c', 'v', 'b', 'n', 'm']
+        ];
+        
+        // Predictive model data
+        const letterPairs = {};
+        let predictedLetters = [];
+        
+        // Create the keyboard
+        function createKeyboard() {
+            for (let i = 0; i < keyboardLayout.length; i++) {
+                const rowEl = document.getElementById(`row${i+1}`);
+                
+                for (let j = 0; j < keyboardLayout[i].length; j++) {
+                    const letter = keyboardLayout[i][j];
+                    const key = document.createElement('div');
+                    key.className = 'key';
+                    key.id = `key-${letter}`;
+                    key.textContent = letter;
+                    key.addEventListener('click', () => handleKeyClick(letter));
+                    rowEl.appendChild(key);
+                }
+            }
+        }
+        
+        // Handle keyboard clicks
+        function handleKeyClick(letter) {
+            currentText += letter;
+            updateDisplay();
+            predictNextLetters();
+            updateVisualPredictions();
+        }
+        
+        // Handle physical keyboard input
+        document.addEventListener('keydown', (event) => {
+            const key = event.key.toLowerCase();
+            
+            if (/^[a-z]$/.test(key)) {
+                currentText += key;
+                updateDisplay();
+                predictNextLetters();
+                updateVisualPredictions();
+            } else if (event.key === 'Backspace') {
+                handleBackspace();
+            } else if (event.key === ' ') {
+                currentText += ' ';
+                updateDisplay();
+                predictNextLetters();
+                updateVisualPredictions();
+            }
+        });
+        
+        // Handle backspace button
+        document.getElementById('backspace').addEventListener('click', handleBackspace);
+        
+        function handleBackspace() {
+            if (currentText.length > 0) {
+                currentText = currentText.substring(0, currentText.length - 1);
+                updateDisplay();
+                predictNextLetters();
+                updateVisualPredictions();
+            }
+        }
+        
+        // Handle space button
+        document.getElementById('space').addEventListener('click', () => {
+            currentText += ' ';
+            updateDisplay();
+            predictNextLetters();
+            updateVisualPredictions();
+        });
+        
+        // Handle clear button
+        document.getElementById('clear').addEventListener('click', () => {
+            currentText = '';
+            updateDisplay();
+            predictNextLetters();
+            updateVisualPredictions();
+        });
+        
+        // Update the text display
+        function updateDisplay() {
+            document.getElementById('text-display').textContent = currentText + '|';
+        }
+        
+        // Update visual keyboard to show predictions
+        function updateVisualPredictions() {
+            // Reset all keys to default appearance
+            for (let row of keyboardLayout) {
+                for (let letter of row) {
+                    const key = document.getElementById(`key-${letter}`);
+                    key.style.backgroundColor = '#444';
+                    key.style.width = '40px';
+                    key.style.height = '40px';
+                    key.style.fontSize = '16px';
+                }
+            }
+            
+            // Highlight and resize predicted letters
+            for (let i = 0; i < predictedLetters.length; i++) {
+                const letter = predictedLetters[i];
+                const key = document.getElementById(`key-${letter}`);
+                
+                if (key) {
+                    // Size based on prediction rank
+                    let scale;
+                    let color;
+                    
+                    if (i === 0) {
+                        scale = 1.75;
+                        color = 'rgb(60, 140, 160)';  // Best prediction
+                    } else if (i < 3) {
+                        scale = 1.5 - i * 0.1;
+                        color = 'rgb(70, 120, 140)';  // Top 3
+                    } else if (i < 5) {
+                        scale = 1.2;
+                        color = 'rgb(80, 100, 120)';  // Top 5
+                    } else {
+                        scale = 1.1;
+                        color = 'rgb(90, 90, 110)';   // Others
+                    }
+                    
+                    key.style.backgroundColor = color;
+                    key.style.width = `${40 * scale}px`;
+                    key.style.height = `${40 * scale}px`;
+                    key.style.fontSize = `${16 * Math.sqrt(scale)}px`;
+                    key.style.zIndex = 10 - i;  // Stack best predictions on top
+                }
+            }
+            
+            // Update predictions display
+            const predictionDisplay = document.getElementById('predictions');
+            if (predictedLetters.length > 0) {
+                predictionDisplay.textContent = 'Predictions: ' + predictedLetters.slice(0, 5).join(', ');
+            } else {
+                predictionDisplay.textContent = 'Predictions: none';
+            }
+        }
+        
+        // Get next letter predictions based on current text
+        function predictNextLetters() {
+            predictedLetters = [];
+            
+            if (currentText.length > 0) {
+                // Get last character or two for context
+                let context;
+                
+                // If we have a space, use only the start of the new word
+                const lastSpaceIndex = currentText.lastIndexOf(' ');
+                if (lastSpaceIndex !== -1 && lastSpaceIndex === currentText.length - 1) {
+                    // Space is the last character
+                    context = '';
+                } else if (lastSpaceIndex !== -1) {
+                    // We're in a word after a space
+                    const afterSpace = currentText.substring(lastSpaceIndex + 1);
+                    context = afterSpace.length >= 2 ? 
+                              afterSpace.substring(afterSpace.length - 2) : 
+                              afterSpace;
+                } else {
+                    // No spaces, use last 1-2 characters
+                    context = currentText.length >= 2 ? 
+                              currentText.substring(currentText.length - 2) : 
+                              currentText.substring(currentText.length - 1);
+                }
+                
+                // Try 2-letter context first, then fallback to 1-letter
+                if (context.length === 2 && letterPairs[context]) {
+                    predictedLetters = getTopPredictions(letterPairs[context]);
+                } else if (context.length > 0 && letterPairs[context[context.length - 1]]) {
+                    predictedLetters = getTopPredictions(letterPairs[context[context.length - 1]]);
+                }
+            }
+        }
+        
+        // Get top predictions sorted by frequency
+        function getTopPredictions(predictions) {
+            return Object.entries(predictions)
+                .sort((a, b) => b[1] - a[1])
+                .map(entry => entry[0])
+                .slice(0, 7);
+        }
+        
+        // Initialize the predictive model with common English patterns
+        function initPredictiveModel() {
+            // Common words to build model from
+            const commonWords = [
+                "the", "and", "that", "have", "for", "not", "with", "you", "this", "but",
+                "his", "from", "they", "say", "she", "will", "one", "all", "would", "there",
+                "their", "what", "about", "which", "when", "make", "like", "time", "just", "know",
+                "people", "year", "your", "good", "some", "could", "them", "see", "other", "than",
+                "then", "now", "look", "only", "come", "over", "think", "also", "back", "after",
+                "use", "two", "how", "our", "work", "first", "well", "way", "even", "new",
+                "want", "because", "any", "these", "give", "day", "most", "hello", "world",
+                "programming", "computer", "software", "keyboard", "interface", "design", "system",
+                "application", "user", "language", "javascript", "code", "function", "html"
+            ];
+            
+            // Process the words to build letter prediction frequencies
+            for (let word of commonWords) {
+                // For single letter predictions
+                for (let i = 0; i < word.length - 1; i++) {
+                    const context = word[i];
+                    const nextChar = word[i + 1];
+                    
+                    if (!letterPairs[context]) {
+                        letterPairs[context] = {};
+                    }
+                    
+                    letterPairs[context][nextChar] = (letterPairs[context][nextChar] || 0) + 3;
+                }
+                
+                // For two-letter context predictions (more accurate)
+                for (let i = 0; i < word.length - 2; i++) {
+                    const context = word.substring(i, i + 2);
+                    const nextChar = word[i + 2];
+                    
+                    if (!letterPairs[context]) {
+                        letterPairs[context] = {};
+                    }
+                    
+                    letterPairs[context][nextChar] = (letterPairs[context][nextChar] || 0) + 5;
+                }
+            }
+            
+            // Add common letter combinations with weights
+            addLetterPair("t", "h", 50);
+            addLetterPair("th", "e", 40);
+            addLetterPair("a", "n", 35);
+            addLetterPair("an", "d", 30);
+            addLetterPair("i", "n", 30);
+            addLetterPair("e", "r", 28);
+            addLetterPair("o", "n", 25);
+            addLetterPair("re", "s", 25);
+            addLetterPair("s", "t", 25);
+            addLetterPair("at", "i", 25);
+            addLetterPair("en", "t", 24);
+            addLetterPair("on", "e", 23);
+            addLetterPair("he", "r", 22);
+            addLetterPair("in", "g", 22);
+            addLetterPair("es", "s", 21);
+            addLetterPair("ou", "r", 20);
+            addLetterPair("pr", "o", 20);
+            addLetterPair("te", "r", 20);
+            addLetterPair("co", "m", 20);
+            addLetterPair("we", "b", 20);
+            addLetterPair("ht", "m", 20);
+            addLetterPair("ja", "v", 20);
+            addLetterPair("sc", "r", 20);
+        }
+        
+        // Helper function to add letter pairs to the model
+        function addLetterPair(context, next, weight) {
+            if (!letterPairs[context]) {
+                letterPairs[context] = {};
+            }
+            
+            letterPairs[context][next] = (letterPairs[context][next] || 0) + weight;
+        }
+        
+        // Initialize
+        window.onload = function() {
+            createKeyboard();
+            initPredictiveModel();
         };
-
-        canvas.appendChild(bubble);
-      });
-    }
-
-    function updateFrequencies(text) {
-      frequencies = {};
-      const cleaned = text.toLowerCase().replace(/[^a-z]/g, ''); // Only letters
-
-      for (const char of cleaned) {
-        frequencies[char] = (frequencies[char] || 0) + 1;
-      }
-
-      updateBubbles();
-    }
-
-    // Trigger frequency update as user types
-    textInput.addEventListener('input', () => {
-      updateFrequencies(textInput.value);
-    });
-  </script>
+    </script>
 </body>
 </html>
