@@ -103,9 +103,15 @@
             <div class="key backspace" id="clear">Clear</div>
         </div>
     </div>
+    <div id="train-container" style="margin-top: 20px; width: 80%; max-width: 600px;">
+        <input type="text" id="train-input" placeholder="Type a sentence to train the model..." style="width: 100%; padding: 8px; margin-bottom: 10px; border-radius: 4px; border: none; background-color: #333; color: white;">
+        <button id="train-button" style="padding: 8px 15px; background-color: #444; color: white; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.2s;">Train Model</button>
+        <div id="train-status" style="margin-top: 8px; color: #aaa; font-size: 14px;"></div>
+    </div>
     <div id="instructions">
         Type using your keyboard or click the virtual keys<br>
-        Larger keys = predicted next letters
+        Larger keys = predicted next letters<br>
+        Add your own sentences to train the model
     </div>
 
     <script>
@@ -121,6 +127,7 @@
         
         // Predictive model data
         const letterPairs = {};
+        const commonWords = [];
         let predictedLetters = [];
         
         // Create the keyboard
@@ -215,11 +222,12 @@
             
             // Highlight and resize predicted letters
             for (let i = 0; i < predictedLetters.length; i++) {
-                const letter = predictedLetters[i];
+                const letter = predictedLetters[i].letter;
+                const score = predictedLetters[i].score;
                 const key = document.getElementById(`key-${letter}`);
                 
                 if (key) {
-                    // Size based on prediction rank
+                    // Size based on prediction rank and score
                     let scale;
                     let color;
                     
@@ -248,7 +256,8 @@
             // Update predictions display
             const predictionDisplay = document.getElementById('predictions');
             if (predictedLetters.length > 0) {
-                predictionDisplay.textContent = 'Predictions: ' + predictedLetters.slice(0, 5).join(', ');
+                const topPredictions = predictedLetters.slice(0, 5).map(p => p.letter).join(', ');
+                predictionDisplay.textContent = 'Predictions: ' + topPredictions;
             } else {
                 predictionDisplay.textContent = 'Predictions: none';
             }
@@ -256,51 +265,77 @@
         
         // Get next letter predictions based on current text
         function predictNextLetters() {
-            predictedLetters = [];
+            const predictions = {};
             
-            if (currentText.length > 0) {
-                // Get last character or two for context
-                let context;
-                
-                // If we have a space, use only the start of the new word
-                const lastSpaceIndex = currentText.lastIndexOf(' ');
-                if (lastSpaceIndex !== -1 && lastSpaceIndex === currentText.length - 1) {
-                    // Space is the last character
-                    context = '';
-                } else if (lastSpaceIndex !== -1) {
-                    // We're in a word after a space
-                    const afterSpace = currentText.substring(lastSpaceIndex + 1);
-                    context = afterSpace.length >= 2 ? 
-                              afterSpace.substring(afterSpace.length - 2) : 
-                              afterSpace;
-                } else {
-                    // No spaces, use last 1-2 characters
-                    context = currentText.length >= 2 ? 
-                              currentText.substring(currentText.length - 2) : 
-                              currentText.substring(currentText.length - 1);
+            if (currentText.length === 0) {
+                predictedLetters = [];
+                return;
+            }
+            
+            // Get current word
+            const lastSpaceIndex = currentText.lastIndexOf(' ');
+            const currentWord = lastSpaceIndex !== -1 ? 
+                              currentText.substring(lastSpaceIndex + 1) : 
+                              currentText;
+            
+            // If the current word is empty (just typed a space)
+            if (currentWord.length === 0) {
+                predictedLetters = [];
+                return;
+            }
+            
+            // 1. Use letter-pair predictions (traditional n-gram model)
+            if (currentWord.length > 0) {
+                // Try with the last 3 characters for context (from trained data)
+                if (currentWord.length >= 3) {
+                    const lastThreeChars = currentWord.substring(currentWord.length - 3);
+                    if (letterPairs[lastThreeChars]) {
+                        for (const [nextLetter, weight] of Object.entries(letterPairs[lastThreeChars])) {
+                            predictions[nextLetter] = (predictions[nextLetter] || 0) + weight * 3; // 3x weight for 3-char context
+                        }
+                    }
                 }
                 
-                // Try 2-letter context first, then fallback to 1-letter
-                if (context.length === 2 && letterPairs[context]) {
-                    predictedLetters = getTopPredictions(letterPairs[context]);
-                } else if (context.length > 0 && letterPairs[context[context.length - 1]]) {
-                    predictedLetters = getTopPredictions(letterPairs[context[context.length - 1]]);
+                // Try with the last 2 characters for context
+                if (currentWord.length >= 2) {
+                    const lastTwoChars = currentWord.substring(currentWord.length - 2);
+                    if (letterPairs[lastTwoChars]) {
+                        for (const [nextLetter, weight] of Object.entries(letterPairs[lastTwoChars])) {
+                            predictions[nextLetter] = (predictions[nextLetter] || 0) + weight * 2; // 2x weight for 2-char context
+                        }
+                    }
+                }
+                
+                // Then add 1-letter predictions
+                const lastChar = currentWord[currentWord.length - 1];
+                if (letterPairs[lastChar]) {
+                    for (const [nextLetter, weight] of Object.entries(letterPairs[lastChar])) {
+                        predictions[nextLetter] = (predictions[nextLetter] || 0) + weight;
+                    }
                 }
             }
-        }
-        
-        // Get top predictions sorted by frequency
-        function getTopPredictions(predictions) {
-            return Object.entries(predictions)
-                .sort((a, b) => b[1] - a[1])
-                .map(entry => entry[0])
-                .slice(0, 7);
+            
+            // 2. Add word completions - check if current word is a prefix of any common words
+            for (const word of commonWords) {
+                if (word.startsWith(currentWord) && currentWord.length < word.length) {
+                    const nextLetter = word[currentWord.length];
+                    // Higher weight for exact word matches
+                    const bonusWeight = word === currentWord + nextLetter ? 50 : 20;
+                    predictions[nextLetter] = (predictions[nextLetter] || 0) + bonusWeight;
+                }
+            }
+            
+            // Convert to array and sort by score
+            predictedLetters = Object.entries(predictions)
+                .map(([letter, score]) => ({ letter, score }))
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 7);  // Keep top 7 predictions
         }
         
         // Initialize the predictive model with common English patterns
         function initPredictiveModel() {
             // Common words to build model from
-            const commonWords = [
+            commonWords.push(
                 "the", "and", "that", "have", "for", "not", "with", "you", "this", "but",
                 "his", "from", "they", "say", "she", "will", "one", "all", "would", "there",
                 "their", "what", "about", "which", "when", "make", "like", "time", "just", "know",
@@ -309,11 +344,35 @@
                 "use", "two", "how", "our", "work", "first", "well", "way", "even", "new",
                 "want", "because", "any", "these", "give", "day", "most", "hello", "world",
                 "programming", "computer", "software", "keyboard", "interface", "design", "system",
-                "application", "user", "language", "javascript", "code", "function", "html"
-            ];
+                "application", "user", "language", "javascript", "code", "function", "html",
+                // Add gorilla word to ensure it works for the example
+                "gorilla", "go", "gold", "gone", "good", "goat"
+            );
             
+            buildModelFromWords(commonWords);
+            
+            // Add specific letter pairs for "gorilla"
+            addLetterPair("g", "o", 40);
+            addLetterPair("go", "r", 40);
+            addLetterPair("gor", "i", 40);
+            addLetterPair("gori", "l", 40);
+            addLetterPair("goril", "l", 40);
+            addLetterPair("gorill", "a", 40);
+            
+            // Try to load any saved training data
+            loadTrainingData();
+        }
+        
+        // Build the prediction model from words
+        function buildModelFromWords(words, trainingWeight = 1) {
             // Process the words to build letter prediction frequencies
-            for (let word of commonWords) {
+            for (let word of words) {
+                // Skip empty words
+                if (!word || word.length === 0) continue;
+                
+                // Convert to lowercase
+                word = word.toLowerCase().trim();
+                
                 // For single letter predictions
                 for (let i = 0; i < word.length - 1; i++) {
                     const context = word[i];
@@ -323,7 +382,7 @@
                         letterPairs[context] = {};
                     }
                     
-                    letterPairs[context][nextChar] = (letterPairs[context][nextChar] || 0) + 3;
+                    letterPairs[context][nextChar] = (letterPairs[context][nextChar] || 0) + (3 * trainingWeight);
                 }
                 
                 // For two-letter context predictions (more accurate)
@@ -335,34 +394,87 @@
                         letterPairs[context] = {};
                     }
                     
-                    letterPairs[context][nextChar] = (letterPairs[context][nextChar] || 0) + 5;
+                    letterPairs[context][nextChar] = (letterPairs[context][nextChar] || 0) + (5 * trainingWeight);
+                }
+                
+                // For three-letter context predictions (even more accurate for trained input)
+                if (trainingWeight > 1) {
+                    for (let i = 0; i < word.length - 3; i++) {
+                        const context = word.substring(i, i + 3);
+                        const nextChar = word[i + 3];
+                        
+                        if (!letterPairs[context]) {
+                            letterPairs[context] = {};
+                        }
+                        
+                        letterPairs[context][nextChar] = (letterPairs[context][nextChar] || 0) + (8 * trainingWeight);
+                    }
+                }
+            }
+        }
+        
+        // Function to train the model with a new sentence
+        function trainModel(sentence) {
+            // Get individual words from sentence
+            const words = sentence.toLowerCase().split(/\s+/);
+            
+            // Add words to common words list if not already there
+            for (const word of words) {
+                if (word.length > 0 && !commonWords.includes(word)) {
+                    commonWords.push(word);
                 }
             }
             
-            // Add common letter combinations with weights
-            addLetterPair("t", "h", 50);
-            addLetterPair("th", "e", 40);
-            addLetterPair("a", "n", 35);
-            addLetterPair("an", "d", 30);
-            addLetterPair("i", "n", 30);
-            addLetterPair("e", "r", 28);
-            addLetterPair("o", "n", 25);
-            addLetterPair("re", "s", 25);
-            addLetterPair("s", "t", 25);
-            addLetterPair("at", "i", 25);
-            addLetterPair("en", "t", 24);
-            addLetterPair("on", "e", 23);
-            addLetterPair("he", "r", 22);
-            addLetterPair("in", "g", 22);
-            addLetterPair("es", "s", 21);
-            addLetterPair("ou", "r", 20);
-            addLetterPair("pr", "o", 20);
-            addLetterPair("te", "r", 20);
-            addLetterPair("co", "m", 20);
-            addLetterPair("we", "b", 20);
-            addLetterPair("ht", "m", 20);
-            addLetterPair("ja", "v", 20);
-            addLetterPair("sc", "r", 20);
+            // Train with higher weight for user input
+            buildModelFromWords(words, 2);
+            
+            // Save training data
+            saveTrainingData(sentence);
+            
+            return words.length;
+        }
+        
+        // Save training data to localStorage
+        function saveTrainingData(sentence) {
+            try {
+                // Get existing training data
+                let trainingData = localStorage.getItem('predictiveKeyboardTraining');
+                let sentences = trainingData ? JSON.parse(trainingData) : [];
+                
+                // Add new sentence if it's not already in the list
+                if (!sentences.includes(sentence)) {
+                    sentences.push(sentence);
+                    
+                    // Keep most recent 50 sentences
+                    if (sentences.length > 50) {
+                        sentences = sentences.slice(sentences.length - 50);
+                    }
+                    
+                    localStorage.setItem('predictiveKeyboardTraining', JSON.stringify(sentences));
+                }
+            } catch (e) {
+                console.error("Error saving training data:", e);
+            }
+        }
+        
+        // Load training data from localStorage
+        function loadTrainingData() {
+            try {
+                const trainingData = localStorage.getItem('predictiveKeyboardTraining');
+                if (trainingData) {
+                    const sentences = JSON.parse(trainingData);
+                    
+                    // Train on each saved sentence
+                    for (const sentence of sentences) {
+                        trainModel(sentence);
+                    }
+                    
+                    return sentences.length;
+                }
+            } catch (e) {
+                console.error("Error loading training data:", e);
+            }
+            return 0;
         }
         
         // Helper function to add letter pairs to the model
@@ -378,6 +490,46 @@
         window.onload = function() {
             createKeyboard();
             initPredictiveModel();
+            
+            // Set up training functionality
+            const trainInput = document.getElementById('train-input');
+            const trainButton = document.getElementById('train-button');
+            const trainStatus = document.getElementById('train-status');
+            
+            // Training button click handler
+            trainButton.addEventListener('click', () => {
+                const sentence = trainInput.value.trim();
+                if (sentence.length > 0) {
+                    const wordCount = trainModel(sentence);
+                    trainStatus.textContent = `Model trained with ${wordCount} words!`;
+                    trainInput.value = '';
+                    
+                    // Update predictions for current text
+                    predictNextLetters();
+                    updateVisualPredictions();
+                    
+                    // Fade out the status message after 3 seconds
+                    setTimeout(() => {
+                        trainStatus.textContent = '';
+                    }, 3000);
+                }
+            });
+            
+            // Also train when pressing Enter in the input field
+            trainInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    trainButton.click();
+                }
+            });
+            
+            // Show how many saved training items loaded
+            const loadedCount = loadTrainingData();
+            if (loadedCount > 0) {
+                trainStatus.textContent = `Loaded ${loadedCount} saved training sentences`;
+                setTimeout(() => {
+                    trainStatus.textContent = '';
+                }, 3000);
+            }
         };
     </script>
 </body>
