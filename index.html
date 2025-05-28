@@ -19,7 +19,6 @@
            box-sizing: border-box;
        }
 
-
        #text-display {
            font-size: 28px;
            height: 50px;
@@ -32,13 +31,33 @@
            text-align: center;
        }
 
+       #stats-display {
+           display: flex;
+           justify-content: space-between;
+           width: 80%;
+           max-width: 600px;
+           margin-bottom: 20px;
+           font-size: 16px;
+           color: #aaa;
+       }
+
+       #wpm-history {
+           margin-bottom: 20px;
+           padding: 10px;
+           background-color: #333;
+           border-radius: 8px;
+           width: 80%;
+           max-width: 600px;
+           min-height: 60px;
+           font-size: 14px;
+           color: #ccc;
+       }
 
        #predictions {
            margin-bottom: 20px;
            font-size: 18px;
            color: #ccc;
        }
-
 
        #keyboard {
            display: flex;
@@ -48,13 +67,11 @@
            max-width: 700px;
        }
 
-
        .keyboard-row {
            display: flex;
            justify-content: center;
            gap: 5px;
        }
-
 
        .key {
            background-color: #444;
@@ -79,7 +96,6 @@
            transform: translateY(2px);
        }
 
-
        #instructions {
            margin-top: 30px;
            font-size: 16px;
@@ -87,14 +103,35 @@
            text-align: center;
        }
 
-
        .spacebar {
            width: 200px;
        }
 
-
        .backspace {
            width: 80px;
+       }
+
+       .wpm-result {
+           background-color: #2d5a2d;
+           border: 1px solid #4a7c4a;
+           padding: 8px;
+           margin: 4px 0;
+           border-radius: 4px;
+       }
+
+       .wpm-result.excellent {
+           background-color: #2d4a2d;
+           border-color: #5a7c5a;
+       }
+
+       .wpm-result.good {
+           background-color: #4a4a2d;
+           border-color: #7c7c5a;
+       }
+
+       .wpm-result.slow {
+           background-color: #4a2d2d;
+           border-color: #7c5a5a;
        }
    </style>
 </head>
@@ -102,7 +139,18 @@
   
    <h2 id="example-text"><b>The quick brown fox jumps over the lazy dog</b></h2>
    <div id="text-display">|</div>
-   <!-- <div id="predictions">Predictions: </div> -->
+   
+   <div id="stats-display">
+       <div>Current WPM: <span id="current-wpm">0</span></div>
+       <div>Time: <span id="timer">0:00</span></div>
+       <div>Words: <span id="word-count">0</span></div>
+   </div>
+
+   <div id="wpm-history">
+       <strong>WPM History:</strong>
+       <div id="wpm-results">Start typing to begin tracking your speed...</div>
+   </div>
+
    <div id="keyboard">
        <div class="keyboard-row" id="row1"></div>
        <div class="keyboard-row" id="row2"></div>
@@ -111,6 +159,7 @@
            <div class="key backspace" id="backspace">⌫</div>
            <div class="key spacebar" id="space">Space</div>
            <div class="key backspace" id="clear">Clear</div>
+           <div class="key backspace" id="finish-round" style="width: 100px; font-size: 12px;">Finish Round</div>
        </div>
    </div>
    <div id="train-container" style="margin-top: 20px; width: 80%; max-width: 600px;">
@@ -121,13 +170,20 @@
    <div id="instructions">
        Type using your keyboard or click the virtual keys<br>
        Larger keys = predicted next letters<br>
+       Click "Finish Round" or press Escape to end current typing session<br>
        Add your own sentences to train the model
    </div>
-
 
    <script>
        // Current text state
        let currentText = "";
+      
+       // WPM tracking variables
+       let startTime = null;
+       let isTyping = false;
+       let timerInterval = null;
+       let wpmHistory = [];
+       let lastWordCount = 0;
       
        // Keyboard layout
        const keyboardLayout = [
@@ -140,6 +196,138 @@
        const letterPairs = {};
        const commonWords = [];
        let predictedLetters = [];
+
+       // WPM Tracking Functions
+       function startTypingSession() {
+           if (!isTyping) {
+               startTime = Date.now();
+               isTyping = true;
+               timerInterval = setInterval(updateTimer, 100);
+           }
+       }
+
+       function finishTypingSession() {
+           if (isTyping && currentText.trim().length > 0) {
+               const endTime = Date.now();
+               const timeElapsed = (endTime - startTime) / 1000 / 60; // in minutes
+               const wordCount = countWords(currentText);
+               const wpm = Math.round(wordCount / timeElapsed);
+               
+               // Store WPM result
+               const result = {
+                   wpm: wpm,
+                   words: wordCount,
+                   time: formatTime(Math.round((endTime - startTime) / 1000)),
+                   text: currentText.substring(0, 50) + (currentText.length > 50 ? '...' : ''),
+                   timestamp: new Date().toLocaleTimeString()
+               };
+               
+               wpmHistory.unshift(result); // Add to beginning of array
+               if (wpmHistory.length > 10) {
+                   wpmHistory = wpmHistory.slice(0, 10); // Keep only last 10 results
+               }
+               
+               updateWPMHistory();
+               saveWPMHistory();
+               
+               // Reset session
+               resetTypingSession();
+           }
+       }
+
+       function resetTypingSession() {
+           isTyping = false;
+           startTime = null;
+           lastWordCount = 0;
+           if (timerInterval) {
+               clearInterval(timerInterval);
+               timerInterval = null;
+           }
+           updateTimer();
+           updateCurrentWPM();
+       }
+
+       function updateTimer() {
+           const timerEl = document.getElementById('timer');
+           if (isTyping && startTime) {
+               const elapsed = Math.round((Date.now() - startTime) / 1000);
+               timerEl.textContent = formatTime(elapsed);
+           } else {
+               timerEl.textContent = '0:00';
+           }
+       }
+
+       function updateCurrentWPM() {
+           const wpmEl = document.getElementById('current-wpm');
+           const wordCountEl = document.getElementById('word-count');
+           
+           if (isTyping && startTime) {
+               const timeElapsed = (Date.now() - startTime) / 1000 / 60;
+               const wordCount = countWords(currentText);
+               const wpm = timeElapsed > 0 ? Math.round(wordCount / timeElapsed) : 0;
+               
+               wpmEl.textContent = wpm;
+               wordCountEl.textContent = wordCount;
+           } else {
+               wpmEl.textContent = '0';
+               wordCountEl.textContent = '0';
+           }
+       }
+
+       function countWords(text) {
+           return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+       }
+
+       function formatTime(seconds) {
+           const mins = Math.floor(seconds / 60);
+           const secs = seconds % 60;
+           return `${mins}:${secs.toString().padStart(2, '0')}`;
+       }
+
+       function updateWPMHistory() {
+           const resultsEl = document.getElementById('wpm-results');
+           
+           if (wpmHistory.length === 0) {
+               resultsEl.innerHTML = 'Start typing to begin tracking your speed...';
+               return;
+           }
+           
+           let html = '';
+           wpmHistory.forEach((result, index) => {
+               let className = 'wpm-result';
+               if (result.wpm >= 60) className += ' excellent';
+               else if (result.wpm >= 40) className += ' good';
+               else if (result.wpm < 25) className += ' slow';
+               
+               html += `<div class="${className}">
+                   <strong>${result.wpm} WPM</strong> - ${result.words} words in ${result.time} 
+                   <span style="color: #888;">(${result.timestamp})</span>
+                   <br><span style="font-size: 12px; color: #aaa;">"${result.text}"</span>
+               </div>`;
+           });
+           
+           resultsEl.innerHTML = html;
+       }
+
+       function saveWPMHistory() {
+           try {
+               localStorage.setItem('predictiveKeyboardWPM', JSON.stringify(wpmHistory));
+           } catch (e) {
+               console.error("Error saving WPM history:", e);
+           }
+       }
+
+       function loadWPMHistory() {
+           try {
+               const saved = localStorage.getItem('predictiveKeyboardWPM');
+               if (saved) {
+                   wpmHistory = JSON.parse(saved);
+                   updateWPMHistory();
+               }
+           } catch (e) {
+               console.error("Error loading WPM history:", e);
+           }
+       }
       
        // Create the keyboard
        function createKeyboard() {
@@ -160,10 +348,12 @@
       
        // Handle keyboard clicks
        function handleKeyClick(letter) {
+           startTypingSession();
            currentText += letter;
            updateDisplay();
            predictNextLetters();
            updateVisualPredictions();
+           updateCurrentWPM();
        }
       
        // Handle physical keyboard input
@@ -171,17 +361,23 @@
            const key = event.key.toLowerCase();
           
            if (/^[a-z]$/.test(key)) {
+               startTypingSession();
                currentText += key;
                updateDisplay();
                predictNextLetters();
                updateVisualPredictions();
+               updateCurrentWPM();
            } else if (event.key === 'Backspace') {
                handleBackspace();
            } else if (event.key === ' ') {
+               startTypingSession();
                currentText += ' ';
                updateDisplay();
                predictNextLetters();
                updateVisualPredictions();
+               updateCurrentWPM();
+           } else if (event.key === 'Escape') {
+               finishTypingSession();
            }
        });
       
@@ -194,23 +390,35 @@
                updateDisplay();
                predictNextLetters();
                updateVisualPredictions();
+               updateCurrentWPM();
            }
        }
       
        // Handle space button
        document.getElementById('space').addEventListener('click', () => {
+           startTypingSession();
            currentText += ' ';
            updateDisplay();
            predictNextLetters();
            updateVisualPredictions();
+           updateCurrentWPM();
        });
       
        // Handle clear button
        document.getElementById('clear').addEventListener('click', () => {
+           if (isTyping) {
+               finishTypingSession();
+           }
            currentText = '';
            updateDisplay();
            predictNextLetters();
            updateVisualPredictions();
+           resetTypingSession();
+       });
+
+       // Handle finish round button
+       document.getElementById('finish-round').addEventListener('click', () => {
+           finishTypingSession();
        });
       
        // Update the text display
@@ -263,15 +471,6 @@
                    key.style.zIndex = 10 - i;  // Stack best predictions on top
                }
            }
-          
-           // Update predictions display
-           // const predictionDisplay = document.getElementById('predictions');
-           // if (predictedLetters.length > 0) {
-           //     const topPredictions = predictedLetters.slice(0, 5).map(p => p.letter).join(', ');
-               // predictionDisplay.textContent = 'Predictions: ' + topPredictions;
-           // } else {
-               // predictionDisplay.textContent = 'Predictions: none';
-           // }
        }
       
        // Get next letter predictions based on current text
@@ -501,6 +700,7 @@
        window.onload = function() {
            createKeyboard();
            initPredictiveModel();
+           loadWPMHistory();
           
            // Set up training functionality
            const trainInput = document.getElementById('train-input');
@@ -512,36 +712,4 @@
                const sentence = trainInput.value.trim();
                if (sentence.length > 0) {
                    const wordCount = trainModel(sentence);
-                   trainStatus.textContent = `Model trained with ${wordCount} words!`;
-                   trainInput.value = '';
-                  
-                   // Update predictions for current text
-                   predictNextLetters();
-                   updateVisualPredictions();
-                  
-                   // Fade out the status message after 3 seconds
-                   setTimeout(() => {
-                       trainStatus.textContent = '';
-                   }, 3000);
-               }
-           });
-          
-           // Also train when pressing Enter in the input field
-           trainInput.addEventListener('keydown', (event) => {
-               if (event.key === 'Enter') {
-                   trainButton.click();
-               }
-           });
-          
-           // Show how many saved training items loaded
-           const loadedCount = loadTrainingData();
-           if (loadedCount > 0) {
-               trainStatus.textContent = `Loaded ${loadedCount} saved training sentences`;
-               setTimeout(() => {
-                   trainStatus.textContent = '';
-               }, 3000);
-           }
-       };
-   </script>
-</body>
-</html>
+                   trai
