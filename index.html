@@ -290,7 +290,7 @@
              {key: '1', shift: '!'}, {key: '2', shift: '@'}, {key: '3', shift: '#'},
              {key: '4', shift: '$'}, {key: '5', shift: '%'}, {key: '6', shift: '^'},
              {key: '7', shift: '&'}, {key: '8', shift: '*'}, {key: '9', shift: '('},
-             {key: '0', shift: ')'}, {key: '-', shift: '_'}, {key: '=', shift: '+'}
+             {key: '10', shift: ')'}, {key: '-', shift: '_'}, {key: '=', shift: '+'}
          ],
          [
              {key: 'q'}, {key: 'w'}, {key: 'e'}, {key: 'r'}, {key: 't'},
@@ -506,7 +506,7 @@
              document.getElementById("wpm").textContent = metrics.wpm;
              document.getElementById("adj-wpm").textContent = metrics.adjWpm;
              document.getElementById("accuracy").textContent = metrics.accuracy + '%';
-             document.getElementById("msd").textContent = metrics.msd.toFixed(2);
+             document.getElementById("msd").textContent = metrics.msd;
              reset();
          } else {
              // Handle punctuation and special characters
@@ -766,7 +766,7 @@
          document.getElementById("wpm").textContent = metrics.wpm;
          document.getElementById("adj-wpm").textContent = metrics.adjWpm;
          document.getElementById("accuracy").textContent = metrics.accuracy + '%';
-         document.getElementById("msd").textContent = metrics.msd.toFixed(2);
+         document.getElementById("msd").textContent = metrics.msd;
          reset();
      });
   
@@ -1006,18 +1006,8 @@
          // Adjusted WPM (accounts for errors)
          const adjWpm = Math.round(rawWpm * (accuracy / 100));
         
-         // Mean Squared Distance (MSD) - measures typing consistency
-         let msd = 0;
-         if (keyPressTimestamps.length > 1) {
-             const intervals = [];
-             for (let i = 1; i < keyPressTimestamps.length; i++) {
-                 intervals.push(keyPressTimestamps[i].time - keyPressTimestamps[i-1].time);
-             }
-            
-             const avgInterval = intervals.reduce((sum, val) => sum + val, 0) / intervals.length;
-             const squaredDiffs = intervals.map(int => Math.pow(int - avgInterval, 2));
-             msd = squaredDiffs.reduce((sum, val) => sum + val, 0) / squaredDiffs.length;
-         }
+         // Minimum String Distance (Levenshtein distance)
+         const msd = calculateLevenshteinDistance(currentText, targetSentence);
         
          return {
              wpm: rawWpm,
@@ -1025,6 +1015,40 @@
              accuracy: accuracy,
              msd: msd
          };
+     }
+    
+     // Calculate Levenshtein distance (Minimum String Distance)
+     function calculateLevenshteinDistance(a, b) {
+         if (a.length === 0) return b.length;
+         if (b.length === 0) return a.length;
+        
+         const matrix = [];
+        
+         // Initialize matrix
+         for (let i = 0; i <= b.length; i++) {
+             matrix[i] = [i];
+         }
+        
+         for (let j = 0; j <= a.length; j++) {
+             matrix[0][j] = j;
+         }
+        
+         // Fill in the matrix
+         for (let i = 1; i <= b.length; i++) {
+             for (let j = 1; j <= a.length; j++) {
+                 if (b.charAt(i-1) === a.charAt(j-1)) {
+                     matrix[i][j] = matrix[i-1][j-1];
+                 } else {
+                     matrix[i][j] = Math.min(
+                         matrix[i-1][j-1] + 1, // substitution
+                         matrix[i][j-1] + 1,    // insertion
+                         matrix[i-1][j] + 1     // deletion
+                     );
+                 }
+             }
+         }
+        
+         return matrix[b.length][a.length];
      }
     
      // Pick a random sentence from the list
