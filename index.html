@@ -745,8 +745,7 @@
           document.getElementById("wpm").textContent = metrics.wpm;
           document.getElementById("adj-wpm").textContent = metrics.adjWpm;
           document.getElementById("accuracy").textContent = metrics.accuracy + '%';
-          document.getElementById("msd").textContent = metrics.msd.toFixed(2);
-          reset();
+          document.getElementById("msd").textContent = metrics.msd;
       });
     
       // Handle clear button
@@ -970,54 +969,45 @@
       
       // Calculate typing metrics
       function calculateMetrics() {
-          // Basic WPM calculation (chars / 5 / minutes)
-          const timeMinutes = elapsed / (1000 * 60);
-          const charsPerWord = 5;
-          const rawWpm = Math.round((totalCharsTyped / charsPerWord) / timeMinutes) || 0;
-          
-          // Accuracy calculation
-          const accuracy = totalCharsTyped > 0 
-              ? Math.round((correctCharsTyped / totalCharsTyped) * 100)
-              : 100;
-          
-          // Adjusted WPM (accounts for errors)
-          const adjWpm = Math.round(rawWpm * (accuracy / 100));
-          
-          // Mean Squared Distance (MSD) - measures typing consistency
-          let msd = 0;
-          if (keyPressTimestamps.length > 1) {
-              const intervals = [];
-              for (let i = 1; i < keyPressTimestamps.length; i++) {
-                  intervals.push(keyPressTimestamps[i].time - keyPressTimestamps[i-1].time);
-              }
-              
-              const avgInterval = intervals.reduce((sum, val) => sum + val, 0) / intervals.length;
-              const squaredDiffs = intervals.map(int => Math.pow(int - avgInterval, 2));
-              msd = squaredDiffs.reduce((sum, val) => sum + val, 0) / squaredDiffs.length;
-          }
-          
-          return {
-              wpm: rawWpm,
-              adjWpm: adjWpm,
-              accuracy: accuracy,
-              msd: msd
-          };
-      }
-      
-      // Pick a random sentence from the list
-      function pickRandom() {
-          const items = document.querySelectorAll("#choices li");
-          const randomIndex = Math.floor(Math.random() * items.length);
-          targetSentence = items[randomIndex].textContent;
-          document.getElementById("result").textContent = targetSentence;
-      }
-
-      window.onload = function() {
-          createKeyboard();
-          initPredictiveModel();
-          updateKeyboardDisplay();
-          pickRandom();
-      };
-  </script>
+    // Basic WPM calculation (chars / 5 / minutes)
+    const timeMinutes = elapsed / (1000 * 60);
+    const charsPerWord = 5;
+    const rawWpm = Math.round((totalCharsTyped / charsPerWord) / timeMinutes) || 0;
+    
+    // Accuracy calculation
+    const accuracy = totalCharsTyped > 0 
+        ? Math.round((correctCharsTyped / totalCharsTyped) * 100)
+        : 100;
+    
+    // Adjusted WPM (accounts for errors)
+    const adjWpm = Math.round(rawWpm * (accuracy / 100));
+    
+    // Normalized Mean Squared Distance (MSD) - measures typing consistency
+    let normalizedMsd = 0;
+    if (keyPressTimestamps.length > 1) {
+        const intervals = [];
+        for (let i = 1; i < keyPressTimestamps.length; i++) {
+            intervals.push(keyPressTimestamps[i].time - keyPressTimestamps[i-1].time);
+        }
+        
+        // Convert to seconds and normalize (0-1 scale)
+        const maxExpectedInterval = 1000; // 1 second max between keystrokes
+        const normalizedIntervals = intervals.map(ms => Math.min(ms / maxExpectedInterval, 1));
+        
+        const avgInterval = normalizedIntervals.reduce((sum, val) => sum + val, 0) / normalizedIntervals.length;
+        const squaredDiffs = normalizedIntervals.map(int => Math.pow(int - avgInterval, 2));
+        normalizedMsd = squaredDiffs.reduce((sum, val) => sum + val, 0) / squaredDiffs.length;
+        
+        // Scale to 0-100 for better readability
+        normalizedMsd = Math.round(normalizedMsd * 100);
+    }
+    
+    return {
+        wpm: rawWpm,
+        adjWpm: adjWpm,
+        accuracy: accuracy,
+        msd: normalizedMsd  // Now returns a value between 0-100
+    };
+}
 </body>
 </html>
