@@ -163,13 +163,13 @@
        // Create the keyboard
        function createKeyboard() {
            for (let i = 0; i < keyboardLayout.length; i++) {
-               const rowEl = document.getElementById(row${i+1});
+               const rowEl = document.getElementById(`row${i+1}`);
               
                for (let j = 0; j < keyboardLayout[i].length; j++) {
                    const letter = keyboardLayout[i][j];
                    const key = document.createElement('div');
                    key.className = 'key';
-                   key.id = key-${letter};
+                   key.id = `key-${letter}`;
                    key.textContent = letter;
                    key.addEventListener('click', () => handleKeyClick(letter));
                    rowEl.appendChild(key);
@@ -352,7 +352,7 @@
            // Reset all keys to default appearance
            for (let row of keyboardLayout) {
                for (let letter of row) {
-                   const key = document.getElementById(key-${letter});
+                   const key = document.getElementById(`key-${letter}`);
                    key.style.backgroundColor = '#444';
                    key.style.width = '40px';
                    key.style.height = '40px';
@@ -364,7 +364,7 @@
            for (let i = 0; i < predictedLetters.length; i++) {
                const letter = predictedLetters[i].letter;
                const score = predictedLetters[i].score;
-               const key = document.getElementById(key-${letter});
+               const key = document.getElementById(`key-${letter}`);
               
                if (key) {
                    let scale;
@@ -385,9 +385,9 @@
                    }
                   
                    key.style.backgroundColor = color;
-                   key.style.width = ${40 * scale}px;
-                   key.style.height = ${40 * scale}px;
-                   key.style.fontSize = ${16 * Math.sqrt(scale)}px;
+                   key.style.width = `${40 * scale}px`;
+                   key.style.height = `${40 * scale}px`;
+                   key.style.fontSize = `${16 * Math.sqrt(scale)}px`;
                    key.style.zIndex = 10 - i;
                }
            }
