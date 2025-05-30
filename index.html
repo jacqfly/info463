@@ -20,6 +20,36 @@
           overflow-y: auto;
       }
 
+      #target-sentence {
+          font-size: 20px;
+          margin-bottom: 20px;
+          padding: 15px;
+          background-color: #1a4a3a;
+          border-radius: 8px;
+          width: 80%;
+          max-width: 800px;
+          text-align: center;
+          border: 2px solid #2a6a4a;
+          box-shadow: 0 0 10px rgba(74, 222, 128, 0.1);
+          line-height: 1.4;
+      }
+
+      #refresh-button {
+          background-color: #0a5c2e;
+          color: #4ade80;
+          border: none;
+          padding: 10px 20px;
+          margin-bottom: 20px;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 14px;
+          transition: all 0.3s ease;
+      }
+
+      #refresh-button:hover {
+          background-color: #0d7a3a;
+          box-shadow: 0 0 8px rgba(74, 222, 128, 0.3);
+      }
 
       #text-display {
           font-size: 28px;
@@ -182,11 +212,9 @@
   </style>
 </head>
 <body>
-   <div id="time">00:00:00.000</div>
-   <div>WPM: <span id="wpm">0</span></div>
-
-
-  <h2 id="example-text"><b>Start typing - the keyboard learns as you go!</b></h2>
+   <div id="target-sentence">She packed twelve blue pens in her small bag.</div>
+   <button id="refresh-button">New Target Sentence</button>
+   <h2 id="example-text"><b>Type the target sentence above - the keyboard learns as you go!</b></h2>
   <div id="learning-indicator">🧠 Learning Mode</div>
   <div id="text-display">|</div>
  
@@ -218,6 +246,47 @@
 
 
   <script>
+      // Target sentences array
+      const targetSentences = [
+          "She packed twelve blue pens in her small bag.",
+          "Every bird sang sweet songs in the quiet dawn.",
+          "They watched clouds drift across the golden sky.",
+          "A clever mouse slipped past the sleepy cat.",
+          "Green leaves danced gently in the warm breeze.",
+          "He quickly wrote notes before the test began.",
+          "The tall man wore boots made of soft leather.",
+          "Old clocks ticked loudly in the silent room.",
+          "She smiled while sipping tea on the front porch.",
+          "We found a hidden path behind the old barn.",
+          "Sunlight streamed through cracks in the ceiling.",
+          "Dogs barked at shadows moving through the yard.",
+          "Rain tapped softly against the window glass.",
+          "Bright stars twinkled above the quiet valley.",
+          "He tied the package with ribbon and string.",
+          "A sudden breeze blew papers off the desk.",
+          "The curious child opened every single drawer.",
+          "Fresh apples fell from the heavy tree limbs.",
+          "The artist painted scenes from her memory.",
+          "They danced all night under the glowing moon."
+      ];
+
+      let currentTargetSentence = "";
+
+      // Function to get a random target sentence
+      function getRandomTargetSentence() {
+          const randomIndex = Math.floor(Math.random() * targetSentences.length);
+          return targetSentences[randomIndex];
+      }
+
+      // Function to update the target sentence display
+      function updateTargetSentence() {
+          currentTargetSentence = getRandomTargetSentence();
+          document.getElementById('target-sentence').textContent = currentTargetSentence;
+      }
+
+      // Event listener for refresh button
+      document.getElementById('refresh-button').addEventListener('click', updateTargetSentence);
+
       // Current text state
       let currentText = "";
       let lastCompletedWord = "";
@@ -281,7 +350,6 @@
     
       // Handle keyboard clicks
       function handleKeyClick(letter, shiftVersion) {
-           start();
           let charToAdd = letter;
          
           if (shiftActive || capsLockActive) {
@@ -379,16 +447,11 @@
               predictNextLetters();
               updateVisualPredictions();
           } else if (event.key === 'Enter') {
-              stop();
               addToTypingBuffer('\n');
               currentText += '\n';
               updateDisplay();
               predictNextLetters();
               updateVisualPredictions();
-             
-              const wpm = calculateWPM();
-              document.getElementById("wpm").textContent = wpm;
-              reset();
           } else {
               // Handle punctuation and special characters
               const punctuationMap = {
@@ -601,17 +664,11 @@
      
       // Handle enter button
       document.getElementById('enter').addEventListener('click', () => {
-          stop();
           addToTypingBuffer('\n');
           currentText += '\n';
           updateDisplay();
           predictNextLetters();
           updateVisualPredictions();
-
-
-          const wpm = calculateWPM();
-          document.getElementById("wpm").textContent = wpm;
-          reset();
       });
     
       // Handle clear button
@@ -621,10 +678,6 @@
           updateDisplay();
           predictNextLetters();
           updateVisualPredictions();
-
-
-          reset();
-          document.getElementById("wpm").textContent = '0';
       });
     
       // Update the text display
@@ -798,65 +851,8 @@
           createKeyboard();
           initPredictiveModel();
           updateKeyboardDisplay();
+          updateTargetSentence(); // Initialize with first random sentence
       };
-
-
-      let startTime, interval, elapsed = 0;
-
-
-   function updateTime() {
-     const now = Date.now();
-     const time = new Date(now - startTime + elapsed);
-     const h = String(time.getUTCHours()).padStart(2, '0');
-     const m = String(time.getUTCMinutes()).padStart(2, '0');
-     const s = String(time.getUTCSeconds()).padStart(2, '0');
-     const ms = String(time.getUTCMilliseconds()).padStart(3, '0');
-     document.getElementById("time").textContent = `${h}:${m}:${s}.${ms}`;
-   }
-
-
-   function start() {
-     if (!interval) {
-       startTime = Date.now();
-       interval = setInterval(updateTime, 10); // Update every 10 ms for smoother display
-     }
-   }
-
-
-   function stop() {
-     if (interval) {
-       clearInterval(interval);
-       elapsed += Date.now() - startTime;
-       interval = null;
-     }
-   }
-
-
-   function reset() {
-     clearInterval(interval);
-     interval = null;
-     elapsed = 0;
-     document.getElementById("time").textContent = "00:00:00.000";
-   }
-
-
-   function calculateWPM() {
-   // Words = total characters / 5
-   const totalChars = currentText.trim().length;
-   const wordsTyped = totalChars / 5;
-
-
-   // Elapsed time in minutes
-   const timeMinutes = elapsed / (1000 * 60);
-  
-   if (timeMinutes === 0) return 0;
-
-
-   const wpm = Math.round(wordsTyped / timeMinutes);
-   return wpm;
-}
-
-
   </script>
 </body>
 </html>
