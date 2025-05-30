@@ -20,37 +20,6 @@
           overflow-y: auto;
       }
 
-      #target-sentence {
-          font-size: 20px;
-          margin-bottom: 20px;
-          padding: 15px;
-          background-color: #1a4a3a;
-          border-radius: 8px;
-          width: 80%;
-          max-width: 800px;
-          text-align: center;
-          border: 2px solid #2a6a4a;
-          box-shadow: 0 0 10px rgba(74, 222, 128, 0.1);
-          line-height: 1.4;
-      }
-
-      #refresh-button {
-          background-color: #0a5c2e;
-          color: #4ade80;
-          border: none;
-          padding: 10px 20px;
-          margin-bottom: 20px;
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 14px;
-          transition: all 0.3s ease;
-      }
-
-      #refresh-button:hover {
-          background-color: #0d7a3a;
-          box-shadow: 0 0 8px rgba(74, 222, 128, 0.3);
-      }
-
       #text-display {
           font-size: 28px;
           min-height: 50px;
@@ -71,18 +40,15 @@
           resize: vertical;
       }
 
-
       #text-display:focus-within {
           border-color: #0a5c2e;
           box-shadow: 0 0 10px rgba(74, 222, 128, 0.2);
       }
 
-
       #text-display.expanded {
           font-size: 24px;
           max-width: 900px;
       }
-
 
       #learning-indicator {
           position: absolute;
@@ -96,13 +62,11 @@
           transition: all 0.3s ease;
       }
 
-
       #learning-indicator.active {
           background-color: #0a5c2e;
           color: #4ade80;
           box-shadow: 0 0 10px rgba(74, 222, 128, 0.3);
       }
-
 
       #keyboard {
           display: flex;
@@ -113,18 +77,15 @@
           transition: all 0.3s ease;
       }
 
-
       .text-display-expanded + #keyboard {
           margin-top: 20px;
       }
-
 
       .keyboard-row {
           display: flex;
           justify-content: center;
           gap: 5px;
       }
-
 
       .key {
           background-color: #444;
@@ -150,20 +111,17 @@
           transform: translateY(2px);
       }
 
-
       .key.shift-active {
           background-color: #0a5c2e;
           color: #4ade80;
           box-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
       }
 
-
       .key.caps-lock-active {
           background-color: #5c0a2e;
           color: #de4a80;
           box-shadow: 0 0 8px rgba(222, 74, 128, 0.4);
       }
-
 
       #instructions {
           margin-top: 30px;
@@ -172,26 +130,21 @@
           text-align: center;
       }
 
-
       .spacebar {
           width: 200px;
       }
-
 
       .backspace {
           width: 80px;
       }
 
-
       .shift-key {
           width: 70px;
       }
 
-
       .enter-key {
           width: 90px;
       }
-
 
       #stats {
           position: absolute;
@@ -204,19 +157,46 @@
           border-radius: 6px;
       }
 
-
       .punctuation-key {
           width: 35px;
           font-size: 14px;
       }
+
+      #choices {
+          display: none; /* hides the list */
+      }
+      
+      #metrics {
+          margin-bottom: 20px;
+          background-color: #333;
+          padding: 10px;
+          border-radius: 8px;
+          width: 80%;
+          max-width: 800px;
+      }
+      
+      .metric {
+          display: inline-block;
+          margin-right: 20px;
+      }
+      
+      .metric-value {
+          font-weight: bold;
+          color: #4ade80;
+      }
   </style>
 </head>
 <body>
-   <div id="target-sentence">She packed twelve blue pens in her small bag.</div>
-   <button id="refresh-button">New Target Sentence</button>
-   <h2 id="example-text"><b>Type the target sentence above - the keyboard learns as you go!</b></h2>
+   <div id="metrics">
+       <div class="metric">WPM: <span class="metric-value" id="wpm">0</span></div>
+       <div class="metric">Adj. WPM: <span class="metric-value" id="adj-wpm">0</span></div>
+       <div class="metric">Accuracy: <span class="metric-value" id="accuracy">100%</span></div>
+       <div class="metric">MSD: <span class="metric-value" id="msd">0</span></div>
+   </div>
+
+   <h2 id="result"></h2>
   <div id="learning-indicator">🧠 Learning Mode</div>
-  <div id="text-display">|</div>
+  <div id="text-display" contenteditable="true">|</div>
  
   <div id="keyboard">
       <div class="keyboard-row" id="row0"></div>
@@ -238,55 +218,35 @@
       The typing area expands automatically as you write more • The keyboard learns from your typing patterns
   </div>
 
-
   <div id="stats">
       <div>Words learned: <span id="words-count">0</span></div>
       <div>Patterns learned: <span id="patterns-count">0</span></div>
   </div>
 
+  <ul id="choices">
+       <li>She packed twelve blue pens in her small bag.</li>
+       <li>Every bird sang sweet songs in the quiet dawn.</li>
+       <li>They watched clouds drift across the golden sky.</li>
+       <li>A clever mouse slipped past the sleepy cat.</li>
+       <li>Green leaves danced gently in the warm breeze.</li>
+       <li>He quickly wrote notes before the test began.</li>
+       <li>The tall man wore boots made of soft leather.</li>
+       <li>Old clocks ticked loudly in the silent room.</li>
+       <li>She smiled while sipping tea on the front porch.</li>
+       <li>We found a hidden path behind the old barn.</li>
+       <li>Sunlight streamed through cracks in the ceiling.</li>
+       <li>Dogs barked at shadows moving through the yard.</li>
+       <li>Rain tapped softly against the window glass.</li>
+       <li>Bright stars twinkled above the quiet valley.</li>
+       <li>He tied the package with ribbon and string.</li>
+       <li>A sudden breeze blew papers off the desk.</li>
+       <li>The curious child opened every single drawer.</li>
+       <li>Fresh apples fell from the heavy tree limbs.</li>
+       <li>The artist painted scenes from her memory.</li>
+       <li>They danced all night under the glowing moon.</li>
+     </ul>
 
   <script>
-      // Target sentences array
-      const targetSentences = [
-          "She packed twelve blue pens in her small bag.",
-          "Every bird sang sweet songs in the quiet dawn.",
-          "They watched clouds drift across the golden sky.",
-          "A clever mouse slipped past the sleepy cat.",
-          "Green leaves danced gently in the warm breeze.",
-          "He quickly wrote notes before the test began.",
-          "The tall man wore boots made of soft leather.",
-          "Old clocks ticked loudly in the silent room.",
-          "She smiled while sipping tea on the front porch.",
-          "We found a hidden path behind the old barn.",
-          "Sunlight streamed through cracks in the ceiling.",
-          "Dogs barked at shadows moving through the yard.",
-          "Rain tapped softly against the window glass.",
-          "Bright stars twinkled above the quiet valley.",
-          "He tied the package with ribbon and string.",
-          "A sudden breeze blew papers off the desk.",
-          "The curious child opened every single drawer.",
-          "Fresh apples fell from the heavy tree limbs.",
-          "The artist painted scenes from her memory.",
-          "They danced all night under the glowing moon."
-      ];
-
-      let currentTargetSentence = "";
-
-      // Function to get a random target sentence
-      function getRandomTargetSentence() {
-          const randomIndex = Math.floor(Math.random() * targetSentences.length);
-          return targetSentences[randomIndex];
-      }
-
-      // Function to update the target sentence display
-      function updateTargetSentence() {
-          currentTargetSentence = getRandomTargetSentence();
-          document.getElementById('target-sentence').textContent = currentTargetSentence;
-      }
-
-      // Event listener for refresh button
-      document.getElementById('refresh-button').addEventListener('click', updateTargetSentence);
-
       // Current text state
       let currentText = "";
       let lastCompletedWord = "";
@@ -294,6 +254,14 @@
       let learningStats = { words: 0, patterns: 0 };
       let shiftActive = false;
       let capsLockActive = false;
+      
+      // Typing metrics
+      let startTime, interval, elapsed = 0;
+      let totalCharsTyped = 0;
+      let correctCharsTyped = 0;
+      let backspaceCount = 0;
+      let keyPressTimestamps = [];
+      let targetSentence = "";
     
       // Keyboard layout
       const keyboardLayout = [
@@ -346,10 +314,12 @@
                   rowEl.appendChild(key);
               }
           }
+          pickRandom();
       }
     
       // Handle keyboard clicks
       function handleKeyClick(letter, shiftVersion) {
+          start();
           let charToAdd = letter;
          
           if (shiftActive || capsLockActive) {
@@ -369,6 +339,21 @@
          
           addToTypingBuffer(charToAdd);
           currentText += charToAdd;
+          totalCharsTyped++;
+          
+          // Check if the typed character matches the target
+          if (currentText.length <= targetSentence.length && 
+              currentText[currentText.length - 1] === targetSentence[currentText.length - 1]) {
+              correctCharsTyped++;
+          }
+          
+          // Record key press timestamp
+          keyPressTimestamps.push({
+              time: Date.now(),
+              char: charToAdd,
+              correct: currentText.length <= targetSentence.length && 
+                      currentText[currentText.length - 1] === targetSentence[currentText.length - 1]
+          });
          
           // Reset shift after use (but not caps lock)
           if (shiftActive) {
@@ -397,8 +382,19 @@
     
       // Handle physical keyboard input
       document.addEventListener('keydown', (event) => {
+          // Prevent default for all keys except Tab
+          if (event.key !== 'Tab') {
+              event.preventDefault();
+          }
+          
           const key = event.key;
-         
+          
+          if (event.key === 'Backspace') {
+              backspaceCount++;
+              handleBackspace();
+              return;
+          }
+          
           if (event.key === 'Shift') {
               if (!shiftActive) {
                   shiftActive = true;
@@ -414,6 +410,7 @@
           }
         
           if (/^[a-zA-Z0-9]$/.test(key)) {
+              start();
               let charToAdd = key.toLowerCase();
              
               // Handle capitalization
@@ -429,6 +426,21 @@
              
               addToTypingBuffer(charToAdd);
               currentText += charToAdd;
+              totalCharsTyped++;
+              
+              // Check if the typed character matches the target
+              if (currentText.length <= targetSentence.length && 
+                  currentText[currentText.length - 1] === targetSentence[currentText.length - 1]) {
+                  correctCharsTyped++;
+              }
+              
+              // Record key press timestamp
+              keyPressTimestamps.push({
+                  time: Date.now(),
+                  char: charToAdd,
+                  correct: currentText.length <= targetSentence.length && 
+                          currentText[currentText.length - 1] === targetSentence[currentText.length - 1]
+              });
              
               if (shiftActive) {
                   shiftActive = false;
@@ -438,20 +450,43 @@
               updateDisplay();
               predictNextLetters();
               updateVisualPredictions();
-          } else if (event.key === 'Backspace') {
-              handleBackspace();
           } else if (event.key === ' ') {
+              start();
               addToTypingBuffer(' ');
               currentText += ' ';
+              totalCharsTyped++;
+              
+              // Check if the typed character matches the target
+              if (currentText.length <= targetSentence.length && 
+                  currentText[currentText.length - 1] === targetSentence[currentText.length - 1]) {
+                  correctCharsTyped++;
+              }
+              
+              // Record key press timestamp
+              keyPressTimestamps.push({
+                  time: Date.now(),
+                  char: ' ',
+                  correct: currentText.length <= targetSentence.length && 
+                          currentText[currentText.length - 1] === targetSentence[currentText.length - 1]
+              });
+              
               updateDisplay();
               predictNextLetters();
               updateVisualPredictions();
           } else if (event.key === 'Enter') {
+              stop();
               addToTypingBuffer('\n');
               currentText += '\n';
               updateDisplay();
               predictNextLetters();
               updateVisualPredictions();
+              
+              const metrics = calculateMetrics();
+              document.getElementById("wpm").textContent = metrics.wpm;
+              document.getElementById("adj-wpm").textContent = metrics.adjWpm;
+              document.getElementById("accuracy").textContent = metrics.accuracy + '%';
+              document.getElementById("msd").textContent = metrics.msd.toFixed(2);
+              reset();
           } else {
               // Handle punctuation and special characters
               const punctuationMap = {
@@ -463,8 +498,25 @@
               };
              
               if (punctuationMap[key]) {
+                  start();
                   addToTypingBuffer(key);
                   currentText += key;
+                  totalCharsTyped++;
+                  
+                  // Check if the typed character matches the target
+                  if (currentText.length <= targetSentence.length && 
+                      currentText[currentText.length - 1] === targetSentence[currentText.length - 1]) {
+                      correctCharsTyped++;
+                  }
+                  
+                  // Record key press timestamp
+                  keyPressTimestamps.push({
+                      time: Date.now(),
+                      char: key,
+                      correct: currentText.length <= targetSentence.length && 
+                              currentText[currentText.length - 1] === targetSentence[currentText.length - 1]
+                  });
+                  
                   updateDisplay();
                   predictNextLetters();
                   updateVisualPredictions();
@@ -475,7 +527,8 @@
       // Handle keyup for shift
       document.addEventListener('keyup', (event) => {
           if (event.key === 'Shift') {
-              // Don't auto-disable shift on keyup since we want it to work for one character
+              shiftActive = false;
+              updateShiftDisplay();
           }
       });
      
@@ -655,8 +708,25 @@
     
       // Handle space button
       document.getElementById('space').addEventListener('click', () => {
+          start();
           addToTypingBuffer(' ');
           currentText += ' ';
+          totalCharsTyped++;
+          
+          // Check if the typed character matches the target
+          if (currentText.length <= targetSentence.length && 
+              currentText[currentText.length - 1] === targetSentence[currentText.length - 1]) {
+              correctCharsTyped++;
+          }
+          
+          // Record key press timestamp
+          keyPressTimestamps.push({
+              time: Date.now(),
+              char: ' ',
+              correct: currentText.length <= targetSentence.length && 
+                      currentText[currentText.length - 1] === targetSentence[currentText.length - 1]
+          });
+          
           updateDisplay();
           predictNextLetters();
           updateVisualPredictions();
@@ -664,11 +734,19 @@
      
       // Handle enter button
       document.getElementById('enter').addEventListener('click', () => {
+          stop();
           addToTypingBuffer('\n');
           currentText += '\n';
           updateDisplay();
           predictNextLetters();
           updateVisualPredictions();
+          
+          const metrics = calculateMetrics();
+          document.getElementById("wpm").textContent = metrics.wpm;
+          document.getElementById("adj-wpm").textContent = metrics.adjWpm;
+          document.getElementById("accuracy").textContent = metrics.accuracy + '%';
+          document.getElementById("msd").textContent = metrics.msd.toFixed(2);
+          reset();
       });
     
       // Handle clear button
@@ -678,6 +756,13 @@
           updateDisplay();
           predictNextLetters();
           updateVisualPredictions();
+          
+          reset();
+          document.getElementById("wpm").textContent = '0';
+          document.getElementById("adj-wpm").textContent = '0';
+          document.getElementById("accuracy").textContent = '100%';
+          document.getElementById("msd").textContent = '0';
+          pickRandom();
       });
     
       // Update the text display
@@ -846,12 +931,92 @@
           learningStats.words = basicWords.length;
           updateStats();
       }
-    
+      
+      // Timer functions
+      function start() {
+          if (!interval) {
+              startTime = Date.now();
+              interval = setInterval(updateTime, 10); // Update every 10 ms for smoother display
+          }
+      }
+
+      function stop() {
+          if (interval) {
+              clearInterval(interval);
+              elapsed += Date.now() - startTime;
+              interval = null;
+          }
+      }
+
+      function reset() {
+          clearInterval(interval);
+          interval = null;
+          elapsed = 0;
+          totalCharsTyped = 0;
+          correctCharsTyped = 0;
+          backspaceCount = 0;
+          keyPressTimestamps = [];
+          currentText = "";
+      }
+      
+      function updateTime() {
+          const now = Date.now();
+          const time = new Date(now - startTime + elapsed);
+          const h = String(time.getUTCHours()).padStart(2, '0');
+          const m = String(time.getUTCMinutes()).padStart(2, '0');
+          const s = String(time.getUTCSeconds()).padStart(2, '0');
+          const ms = String(time.getUTCMilliseconds()).padStart(3, '0');
+      }
+      
+      // Calculate typing metrics
+      function calculateMetrics() {
+          // Basic WPM calculation (chars / 5 / minutes)
+          const timeMinutes = elapsed / (1000 * 60);
+          const charsPerWord = 5;
+          const rawWpm = Math.round((totalCharsTyped / charsPerWord) / timeMinutes) || 0;
+          
+          // Accuracy calculation
+          const accuracy = totalCharsTyped > 0 
+              ? Math.round((correctCharsTyped / totalCharsTyped) * 100)
+              : 100;
+          
+          // Adjusted WPM (accounts for errors)
+          const adjWpm = Math.round(rawWpm * (accuracy / 100));
+          
+          // Mean Squared Distance (MSD) - measures typing consistency
+          let msd = 0;
+          if (keyPressTimestamps.length > 1) {
+              const intervals = [];
+              for (let i = 1; i < keyPressTimestamps.length; i++) {
+                  intervals.push(keyPressTimestamps[i].time - keyPressTimestamps[i-1].time);
+              }
+              
+              const avgInterval = intervals.reduce((sum, val) => sum + val, 0) / intervals.length;
+              const squaredDiffs = intervals.map(int => Math.pow(int - avgInterval, 2));
+              msd = squaredDiffs.reduce((sum, val) => sum + val, 0) / squaredDiffs.length;
+          }
+          
+          return {
+              wpm: rawWpm,
+              adjWpm: adjWpm,
+              accuracy: accuracy,
+              msd: msd
+          };
+      }
+      
+      // Pick a random sentence from the list
+      function pickRandom() {
+          const items = document.querySelectorAll("#choices li");
+          const randomIndex = Math.floor(Math.random() * items.length);
+          targetSentence = items[randomIndex].textContent;
+          document.getElementById("result").textContent = targetSentence;
+      }
+
       window.onload = function() {
           createKeyboard();
           initPredictiveModel();
           updateKeyboardDisplay();
-          updateTargetSentence(); // Initialize with first random sentence
+          pickRandom();
       };
   </script>
 </body>
