@@ -1,766 +1,862 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>Adaptive Predictive Keyboard</title>
-   <style>
-       body {
-           font-family: 'Arial', sans-serif;
-           background-color: #2a2a2a;
-           color: white;
-           display: flex;
-           flex-direction: column;
-           align-items: center;
-           justify-content: flex-start;
-           min-height: 100vh;
-           margin: 0;
-           padding: 20px;
-           box-sizing: border-box;
-           overflow-y: auto;
-       }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adaptive Predictive Keyboard</title>
+  <style>
+      body {
+          font-family: 'Arial', sans-serif;
+          background-color: #2a2a2a;
+          color: white;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: flex-start;
+          min-height: 100vh;
+          margin: 0;
+          padding: 20px;
+          box-sizing: border-box;
+          overflow-y: auto;
+      }
 
-       #text-display {
-           font-size: 28px;
-           min-height: 50px;
-           max-height: 300px;
-           margin-bottom: 40px;
-           padding: 15px;
-           background-color: #333;
-           border-radius: 8px;
-           width: 80%;
-           max-width: 800px;
-           text-align: left;
-           word-wrap: break-word;
-           overflow-wrap: break-word;
-           overflow-y: auto;
-           line-height: 1.4;
-           transition: all 0.3s ease;
-           border: 2px solid #444;
-           resize: vertical;
-       }
 
-       #text-display:focus-within {
-           border-color: #0a5c2e;
-           box-shadow: 0 0 10px rgba(74, 222, 128, 0.2);
-       }
+      #text-display {
+          font-size: 28px;
+          min-height: 50px;
+          max-height: 300px;
+          margin-bottom: 40px;
+          padding: 15px;
+          background-color: #333;
+          border-radius: 8px;
+          width: 80%;
+          max-width: 800px;
+          text-align: left;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          overflow-y: auto;
+          line-height: 1.4;
+          transition: all 0.3s ease;
+          border: 2px solid #444;
+          resize: vertical;
+      }
 
-       #text-display.expanded {
-           font-size: 24px;
-           max-width: 900px;
-       }
 
-       #learning-indicator {
-           position: absolute;
-           top: 20px;
-           right: 20px;
-           background-color: #444;
-           padding: 8px 12px;
-           border-radius: 20px;
-           font-size: 12px;
-           color: #aaa;
-           transition: all 0.3s ease;
-       }
+      #text-display:focus-within {
+          border-color: #0a5c2e;
+          box-shadow: 0 0 10px rgba(74, 222, 128, 0.2);
+      }
 
-       #learning-indicator.active {
-           background-color: #0a5c2e;
-           color: #4ade80;
-           box-shadow: 0 0 10px rgba(74, 222, 128, 0.3);
-       }
 
-       #keyboard {
-           display: flex;
-           flex-direction: column;
-           gap: 10px;
-           width: 80%;
-           max-width: 700px;
-           transition: all 0.3s ease;
-       }
+      #text-display.expanded {
+          font-size: 24px;
+          max-width: 900px;
+      }
 
-       .text-display-expanded + #keyboard {
-           margin-top: 20px;
-       }
 
-       .keyboard-row {
-           display: flex;
-           justify-content: center;
-           gap: 5px;
-       }
+      #learning-indicator {
+          position: absolute;
+          top: 20px;
+          right: 20px;
+          background-color: #444;
+          padding: 8px 12px;
+          border-radius: 20px;
+          font-size: 12px;
+          color: #aaa;
+          transition: all 0.3s ease;
+      }
 
-       .key {
-           background-color: #444;
-           border: 1px solid #555;
-           border-radius: 6px;
-           display: flex;
-           align-items: center;
-           justify-content: center;
-           cursor: pointer;
-           transition: all 0.2s ease;
-           user-select: none;
-           width: 40px;
-           height: 40px;
-           font-size: 16px;
-       }
-      
-       .key:hover {
-           background-color: #555;
-       }
-      
-       .key:active {
-           background-color: #666;
-           transform: translateY(2px);
-       }
 
-       .key.shift-active {
-           background-color: #0a5c2e;
-           color: #4ade80;
-           box-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
-       }
+      #learning-indicator.active {
+          background-color: #0a5c2e;
+          color: #4ade80;
+          box-shadow: 0 0 10px rgba(74, 222, 128, 0.3);
+      }
 
-       .key.caps-lock-active {
-           background-color: #5c0a2e;
-           color: #de4a80;
-           box-shadow: 0 0 8px rgba(222, 74, 128, 0.4);
-       }
 
-       #instructions {
-           margin-top: 30px;
-           font-size: 16px;
-           color: #aaa;
-           text-align: center;
-       }
+      #keyboard {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          width: 80%;
+          max-width: 700px;
+          transition: all 0.3s ease;
+      }
 
-       .spacebar {
-           width: 200px;
-       }
 
-       .backspace {
-           width: 80px;
-       }
+      .text-display-expanded + #keyboard {
+          margin-top: 20px;
+      }
 
-       .shift-key {
-           width: 70px;
-       }
 
-       .enter-key {
-           width: 90px;
-       }
+      .keyboard-row {
+          display: flex;
+          justify-content: center;
+          gap: 5px;
+      }
 
-       #stats {
-           position: absolute;
-           bottom: 20px;
-           left: 20px;
-           font-size: 12px;
-           color: #666;
-           background-color: #333;
-           padding: 10px;
-           border-radius: 6px;
-       }
 
-       .punctuation-key {
-           width: 35px;
-           font-size: 14px;
-       }
-   </style>
+      .key {
+          background-color: #444;
+          border: 1px solid #555;
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          user-select: none;
+          width: 40px;
+          height: 40px;
+          font-size: 16px;
+      }
+    
+      .key:hover {
+          background-color: #555;
+      }
+    
+      .key:active {
+          background-color: #666;
+          transform: translateY(2px);
+      }
+
+
+      .key.shift-active {
+          background-color: #0a5c2e;
+          color: #4ade80;
+          box-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
+      }
+
+
+      .key.caps-lock-active {
+          background-color: #5c0a2e;
+          color: #de4a80;
+          box-shadow: 0 0 8px rgba(222, 74, 128, 0.4);
+      }
+
+
+      #instructions {
+          margin-top: 30px;
+          font-size: 16px;
+          color: #aaa;
+          text-align: center;
+      }
+
+
+      .spacebar {
+          width: 200px;
+      }
+
+
+      .backspace {
+          width: 80px;
+      }
+
+
+      .shift-key {
+          width: 70px;
+      }
+
+
+      .enter-key {
+          width: 90px;
+      }
+
+
+      #stats {
+          position: absolute;
+          bottom: 20px;
+          left: 20px;
+          font-size: 12px;
+          color: #666;
+          background-color: #333;
+          padding: 10px;
+          border-radius: 6px;
+      }
+
+
+      .punctuation-key {
+          width: 35px;
+          font-size: 14px;
+      }
+  </style>
 </head>
 <body>
+   <div id="time">00:00:00.000</div>
+   <div>WPM: <span id="wpm">0</span></div>
+
+
+  <h2 id="example-text"><b>Start typing - the keyboard learns as you go!</b></h2>
+  <div id="learning-indicator">🧠 Learning Mode</div>
+  <div id="text-display">|</div>
+ 
+  <div id="keyboard">
+      <div class="keyboard-row" id="row0"></div>
+      <div class="keyboard-row" id="row1"></div>
+      <div class="keyboard-row" id="row2"></div>
+      <div class="keyboard-row" id="row3"></div>
+      <div class="keyboard-row">
+          <div class="key shift-key" id="shift">Shift</div>
+          <div class="key backspace" id="backspace">⌫</div>
+          <div class="key spacebar" id="space">Space</div>
+          <div class="key enter-key" id="enter">Enter</div>
+          <div class="key backspace" id="clear">Clear</div>
+      </div>
+  </div>
+ 
+  <div id="instructions">
+      Type using your keyboard or click the virtual keys<br>
+      Larger keys = predicted next letters • Shift for capitals • Auto-capitalization enabled<br>
+      The typing area expands automatically as you write more • The keyboard learns from your typing patterns
+  </div>
+
+
+  <div id="stats">
+      <div>Words learned: <span id="words-count">0</span></div>
+      <div>Patterns learned: <span id="patterns-count">0</span></div>
+  </div>
+
+
+  <script>
+      // Current text state
+      let currentText = "";
+      let lastCompletedWord = "";
+      let typingBuffer = "";
+      let learningStats = { words: 0, patterns: 0 };
+      let shiftActive = false;
+      let capsLockActive = false;
+    
+      // Keyboard layout
+      const keyboardLayout = [
+          [
+              {key: '1', shift: '!'}, {key: '2', shift: '@'}, {key: '3', shift: '#'},
+              {key: '4', shift: '$'}, {key: '5', shift: '%'}, {key: '6', shift: '^'},
+              {key: '7', shift: '&'}, {key: '8', shift: '*'}, {key: '9', shift: '('},
+              {key: '0', shift: ')'}, {key: '-', shift: '_'}, {key: '=', shift: '+'}
+          ],
+          [
+              {key: 'q'}, {key: 'w'}, {key: 'e'}, {key: 'r'}, {key: 't'},
+              {key: 'y'}, {key: 'u'}, {key: 'i'}, {key: 'o'}, {key: 'p'},
+              {key: '[', shift: '{'}, {key: ']', shift: '}'}
+          ],
+          [
+              {key: 'a'}, {key: 's'}, {key: 'd'}, {key: 'f'}, {key: 'g'},
+              {key: 'h'}, {key: 'j'}, {key: 'k'}, {key: 'l'},
+              {key: ';', shift: ':'}, {key: "'", shift: '"'}
+          ],
+          [
+              {key: 'z'}, {key: 'x'}, {key: 'c'}, {key: 'v'}, {key: 'b'},
+              {key: 'n'}, {key: 'm'}, {key: ',', shift: '<'},
+              {key: '.', shift: '>'}, {key: '/', shift: '?'}
+          ]
+      ];
+    
+      // Predictive model data
+      const letterPairs = {};
+      const commonWords = new Set();
+      let predictedLetters = [];
+    
+      // Create the keyboard
+      function createKeyboard() {
+          for (let i = 0; i < keyboardLayout.length; i++) {
+              const rowEl = document.getElementById(`row${i}`);
+            
+              for (let j = 0; j < keyboardLayout[i].length; j++) {
+                  const keyData = keyboardLayout[i][j];
+                  const key = document.createElement('div');
+                 
+                  if (keyData.key.match(/[0-9\-=\[\]';,.\//]/)) {
+                      key.className = 'key punctuation-key';
+                  } else {
+                      key.className = 'key';
+                  }
+                 
+                  key.id = `key-${keyData.key}`;
+                  key.textContent = keyData.key;
+                  key.addEventListener('click', () => handleKeyClick(keyData.key, keyData.shift));
+                  rowEl.appendChild(key);
+              }
+          }
+      }
+    
+      // Handle keyboard clicks
+      function handleKeyClick(letter, shiftVersion) {
+           start();
+          let charToAdd = letter;
+         
+          if (shiftActive || capsLockActive) {
+              if (shiftVersion) {
+                  charToAdd = shiftVersion;
+              } else if (letter.match(/[a-z]/)) {
+                  charToAdd = letter.toUpperCase();
+              }
+          }
+         
+          // Auto-capitalize if needed
+          if (!shiftActive && !capsLockActive && letter.match(/[a-z]/)) {
+              if (shouldAutoCapitalize()) {
+                  charToAdd = letter.toUpperCase();
+              }
+          }
+         
+          addToTypingBuffer(charToAdd);
+          currentText += charToAdd;
+         
+          // Reset shift after use (but not caps lock)
+          if (shiftActive) {
+              shiftActive = false;
+              updateShiftDisplay();
+          }
+         
+          updateDisplay();
+          predictNextLetters();
+          updateVisualPredictions();
+      }
+     
+      // Check if we should auto-capitalize
+      function shouldAutoCapitalize() {
+          if (currentText.length === 0) return true;
+         
+          // Capitalize after sentence-ending punctuation
+          const lastTwoChars = currentText.slice(-2);
+          if (lastTwoChars.match(/[.!?]\s$/)) return true;
+         
+          // Capitalize after newline
+          if (currentText.endsWith('\n')) return true;
+         
+          return false;
+      }
+    
+      // Handle physical keyboard input
+      document.addEventListener('keydown', (event) => {
+          const key = event.key;
+         
+          if (event.key === 'Shift') {
+              if (!shiftActive) {
+                  shiftActive = true;
+                  updateShiftDisplay();
+              }
+              return;
+          }
+         
+          if (event.key === 'CapsLock') {
+              capsLockActive = !capsLockActive;
+              updateCapsLockDisplay();
+              return;
+          }
+        
+          if (/^[a-zA-Z0-9]$/.test(key)) {
+              let charToAdd = key.toLowerCase();
+             
+              // Handle capitalization
+              if ((shiftActive && !capsLockActive) || (!shiftActive && capsLockActive)) {
+                  if (charToAdd.match(/[a-z]/)) {
+                      charToAdd = charToAdd.toUpperCase();
+                  }
+              } else if (!shiftActive && !capsLockActive && charToAdd.match(/[a-z]/)) {
+                  if (shouldAutoCapitalize()) {
+                      charToAdd = charToAdd.toUpperCase();
+                  }
+              }
+             
+              addToTypingBuffer(charToAdd);
+              currentText += charToAdd;
+             
+              if (shiftActive) {
+                  shiftActive = false;
+                  updateShiftDisplay();
+              }
+             
+              updateDisplay();
+              predictNextLetters();
+              updateVisualPredictions();
+          } else if (event.key === 'Backspace') {
+              handleBackspace();
+          } else if (event.key === ' ') {
+              addToTypingBuffer(' ');
+              currentText += ' ';
+              updateDisplay();
+              predictNextLetters();
+              updateVisualPredictions();
+          } else if (event.key === 'Enter') {
+              stop();
+              addToTypingBuffer('\n');
+              currentText += '\n';
+              updateDisplay();
+              predictNextLetters();
+              updateVisualPredictions();
+             
+              const wpm = calculateWPM();
+              document.getElementById("wpm").textContent = wpm;
+              reset();
+          } else {
+              // Handle punctuation and special characters
+              const punctuationMap = {
+                  '!': '!', '@': '@', '#': '#', '$': '$', '%': '%', '^': '^',
+                  '&': '&', '*': '*', '(': '(', ')': ')', '_': '_', '+': '+',
+                  '[': '[', ']': ']', '{': '{', '}': '}', ';': ';', ':': ':',
+                  "'": "'", '"': '"', ',': ',', '<': '<', '.': '.', '>': '>',
+                  '/': '/', '?': '?', '-': '-', '=': '='
+              };
+             
+              if (punctuationMap[key]) {
+                  addToTypingBuffer(key);
+                  currentText += key;
+                  updateDisplay();
+                  predictNextLetters();
+                  updateVisualPredictions();
+              }
+          }
+      });
+     
+      // Handle keyup for shift
+      document.addEventListener('keyup', (event) => {
+          if (event.key === 'Shift') {
+              // Don't auto-disable shift on keyup since we want it to work for one character
+          }
+      });
+     
+      // Update shift key display
+      function updateShiftDisplay() {
+          const shiftKey = document.getElementById('shift');
+          if (shiftActive) {
+              shiftKey.classList.add('shift-active');
+          } else {
+              shiftKey.classList.remove('shift-active');
+          }
+          updateKeyboardDisplay();
+      }
+     
+      // Update caps lock display
+      function updateCapsLockDisplay() {
+          const shiftKey = document.getElementById('shift');
+          if (capsLockActive) {
+              shiftKey.classList.add('caps-lock-active');
+              shiftKey.textContent = 'CAPS';
+          } else {
+              shiftKey.classList.remove('caps-lock-active');
+              shiftKey.textContent = 'Shift';
+          }
+          updateKeyboardDisplay();
+      }
+     
+      // Update keyboard display based on shift/caps state
+      function updateKeyboardDisplay() {
+          for (let i = 0; i < keyboardLayout.length; i++) {
+              for (let j = 0; j < keyboardLayout[i].length; j++) {
+                  const keyData = keyboardLayout[i][j];
+                  const keyElement = document.getElementById(`key-${keyData.key}`);
+                 
+                  if (keyElement) {
+                      if (shiftActive || capsLockActive) {
+                          if (keyData.shift) {
+                              keyElement.textContent = keyData.shift;
+                          } else if (keyData.key.match(/[a-z]/)) {
+                              keyElement.textContent = keyData.key.toUpperCase();
+                          }
+                      } else {
+                          keyElement.textContent = keyData.key;
+                      }
+                  }
+              }
+          }
+      }
+    
+      // Add character to typing buffer for learning
+      function addToTypingBuffer(char) {
+          typingBuffer += char;
+         
+          // Learn from completed words (when space or punctuation is typed)
+          if (char === ' ' || char.match(/[.!?;:,\n]/)) {
+              const words = typingBuffer.replace(/[^\w\s]/g, ' ').trim().split(/\s+/);
+              for (const word of words) {
+                  if (word.length > 1) {
+                      learnFromWord(word.toLowerCase());
+                      showLearningIndicator();
+                  }
+              }
+              typingBuffer = "";
+          }
+         
+          // Also learn from longer phrases (every 20 characters)
+          if (typingBuffer.length >= 20) {
+              learnFromPhrase(typingBuffer);
+              typingBuffer = typingBuffer.slice(-10); // Keep last 10 chars for context
+          }
+      }
+    
+      // Learn patterns from a single word
+      function learnFromWord(word) {
+          if (!word || word.length <= 1) return;
+         
+          word = word.toLowerCase().trim();
+         
+          // Add to vocabulary if new
+          if (!commonWords.has(word)) {
+              commonWords.add(word);
+              learningStats.words++;
+              updateStats();
+          }
+         
+          // Learn letter patterns with adaptive weighting
+          const baseWeight = Math.min(word.length, 8); // Longer words get more weight
+         
+          // Single letter context
+          for (let i = 0; i < word.length - 1; i++) {
+              const context = word[i];
+              const nextChar = word[i + 1];
+              addLetterPattern(context, nextChar, baseWeight);
+          }
+         
+          // Two letter context (more important for learning)
+          for (let i = 0; i < word.length - 2; i++) {
+              const context = word.substring(i, i + 2);
+              const nextChar = word[i + 2];
+              addLetterPattern(context, nextChar, baseWeight * 2);
+          }
+         
+          // Three letter context (most important for user-specific patterns)
+          for (let i = 0; i < word.length - 3; i++) {
+              const context = word.substring(i, i + 3);
+              const nextChar = word[i + 3];
+              addLetterPattern(context, nextChar, baseWeight * 3);
+          }
+      }
+     
+      // Learn from longer phrases
+      function learnFromPhrase(phrase) {
+          const words = phrase.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/);
+          for (const word of words) {
+              if (word.length > 1) {
+                  learnFromWord(word);
+              }
+          }
+      }
+     
+      // Add a letter pattern to the model
+      function addLetterPattern(context, next, weight) {
+          if (!letterPairs[context]) {
+              letterPairs[context] = {};
+          }
+         
+          const oldWeight = letterPairs[context][next] || 0;
+          letterPairs[context][next] = oldWeight + weight;
+         
+          if (oldWeight === 0) {
+              learningStats.patterns++;
+          }
+      }
+     
+      // Show learning indicator animation
+      function showLearningIndicator() {
+          const indicator = document.getElementById('learning-indicator');
+          indicator.classList.add('active');
+          setTimeout(() => {
+              indicator.classList.remove('active');
+          }, 1000);
+      }
+     
+      // Update learning statistics
+      function updateStats() {
+          document.getElementById('words-count').textContent = learningStats.words;
+          document.getElementById('patterns-count').textContent = learningStats.patterns;
+      }
+     
+      // Handle shift button
+      document.getElementById('shift').addEventListener('click', () => {
+          if (capsLockActive) {
+              capsLockActive = false;
+              updateCapsLockDisplay();
+          } else {
+              shiftActive = !shiftActive;
+              updateShiftDisplay();
+          }
+      });
+    
+      // Handle backspace button
+      document.getElementById('backspace').addEventListener('click', handleBackspace);
+    
+      function handleBackspace() {
+          if (currentText.length > 0) {
+              // Remove from typing buffer too
+              if (typingBuffer.length > 0) {
+                  typingBuffer = typingBuffer.slice(0, -1);
+              }
+             
+              currentText = currentText.substring(0, currentText.length - 1);
+              updateDisplay();
+              predictNextLetters();
+              updateVisualPredictions();
+          }
+      }
+    
+      // Handle space button
+      document.getElementById('space').addEventListener('click', () => {
+          addToTypingBuffer(' ');
+          currentText += ' ';
+          updateDisplay();
+          predictNextLetters();
+          updateVisualPredictions();
+      });
+     
+      // Handle enter button
+      document.getElementById('enter').addEventListener('click', () => {
+          stop();
+          addToTypingBuffer('\n');
+          currentText += '\n';
+          updateDisplay();
+          predictNextLetters();
+          updateVisualPredictions();
+
+
+          const wpm = calculateWPM();
+          document.getElementById("wpm").textContent = wpm;
+          reset();
+      });
+    
+      // Handle clear button
+      document.getElementById('clear').addEventListener('click', () => {
+          currentText = '';
+          typingBuffer = '';
+          updateDisplay();
+          predictNextLetters();
+          updateVisualPredictions();
+
+
+          reset();
+          document.getElementById("wpm").textContent = '0';
+      });
+    
+      // Update the text display
+      function updateDisplay() {
+          const displayText = currentText.replace(/\n/g, '<br>');
+          const textDisplay = document.getElementById('text-display');
+         
+          // Use innerHTML to handle line breaks properly
+          textDisplay.innerHTML = displayText + '<span style="opacity: 0.6;">|</span>';
+         
+          // Auto-expand based on content length
+          if (currentText.length > 200) {
+              textDisplay.classList.add('expanded');
+              textDisplay.style.minHeight = '120px';
+          } else if (currentText.length > 100) {
+              textDisplay.style.minHeight = '80px';
+          } else {
+              textDisplay.classList.remove('expanded');
+              textDisplay.style.minHeight = '50px';
+          }
+         
+          // Auto-scroll to bottom if content overflows
+          textDisplay.scrollTop = textDisplay.scrollHeight;
+      }
+    
+      // Update visual keyboard to show predictions
+      function updateVisualPredictions() {
+          // Reset all letter keys to default appearance
+          for (let i = 0; i < keyboardLayout.length; i++) {
+              for (let j = 0; j < keyboardLayout[i].length; j++) {
+                  const keyData = keyboardLayout[i][j];
+                  if (keyData.key.match(/[a-z]/)) {
+                      const key = document.getElementById(`key-${keyData.key}`);
+                      key.style.backgroundColor = '#444';
+                      key.style.width = '40px';
+                      key.style.height = '40px';
+                      key.style.fontSize = '16px';
+                  }
+              }
+          }
+        
+          // Highlight and resize predicted letters
+          for (let i = 0; i < predictedLetters.length; i++) {
+              const letter = predictedLetters[i].letter;
+              const score = predictedLetters[i].score;
+              const key = document.getElementById(`key-${letter}`);
+            
+              if (key) {
+                  let scale;
+                  let color;
+                
+                  if (i === 0) {
+                      scale = 1.8;
+                      color = 'rgb(50, 150, 170)';  // Best prediction - brighter
+                  } else if (i < 3) {
+                      scale = 1.5 - i * 0.1;
+                      color = 'rgb(60, 130, 150)';  // Top 3
+                  } else if (i < 5) {
+                      scale = 1.3;
+                      color = 'rgb(70, 110, 130)';  // Top 5
+                  } else {
+                      scale = 1.15;
+                      color = 'rgb(80, 90, 110)';   // Others
+                  }
+                
+                  key.style.backgroundColor = color;
+                  key.style.width = `${40 * scale}px`;
+                  key.style.height = `${40 * scale}px`;
+                  key.style.fontSize = `${16 * Math.sqrt(scale)}px`;
+                  key.style.zIndex = 10 - i;
+              }
+          }
+      }
+    
+      // Get next letter predictions based on current text
+      function predictNextLetters() {
+          const predictions = {};
+        
+          if (currentText.length === 0) {
+              predictedLetters = [];
+              return;
+          }
+        
+          // Get current word (considering punctuation as word boundaries)
+          const words = currentText.split(/[\s\n.!?;:,]+/);
+          const currentWord = words[words.length - 1].toLowerCase().replace(/[^\w]/g, '');
+        
+          if (currentWord.length === 0) {
+              // At beginning of new word - predict common starting letters
+              addCommonStartingLetters(predictions);
+          } else {
+              // Use learned patterns for prediction
+             
+              // Try 3-character context first (most specific)
+              if (currentWord.length >= 3) {
+                  const context = currentWord.substring(currentWord.length - 3);
+                  if (letterPairs[context]) {
+                      for (const [nextLetter, weight] of Object.entries(letterPairs[context])) {
+                          predictions[nextLetter] = (predictions[nextLetter] || 0) + weight * 4;
+                      }
+                  }
+              }
+             
+              // Try 2-character context
+              if (currentWord.length >= 2) {
+                  const context = currentWord.substring(currentWord.length - 2);
+                  if (letterPairs[context]) {
+                      for (const [nextLetter, weight] of Object.entries(letterPairs[context])) {
+                          predictions[nextLetter] = (predictions[nextLetter] || 0) + weight * 2;
+                      }
+                  }
+              }
+             
+              // Try 1-character context
+              const lastChar = currentWord[currentWord.length - 1];
+              if (letterPairs[lastChar]) {
+                  for (const [nextLetter, weight] of Object.entries(letterPairs[lastChar])) {
+                      predictions[nextLetter] = (predictions[nextLetter] || 0) + weight;
+                  }
+              }
+             
+              // Word completion predictions
+              for (const word of commonWords) {
+                  if (word.startsWith(currentWord) && currentWord.length < word.length) {
+                      const nextLetter = word[currentWord.length];
+                      const completionBonus = word.length === currentWord.length + 1 ? 50 : 25;
+                      predictions[nextLetter] = (predictions[nextLetter] || 0) + completionBonus;
+                  }
+              }
+          }
+        
+          // Convert to array and sort by score
+          predictedLetters = Object.entries(predictions)
+              .filter(([letter, score]) => letter.match(/[a-z]/)) // Only show letter predictions
+              .map(([letter, score]) => ({ letter, score }))
+              .sort((a, b) => b.score - a.score)
+              .slice(0, 8);
+      }
+     
+      // Add common starting letters for new words
+      function addCommonStartingLetters(predictions) {
+          const commonStarters = {
+              't': 30, 'a': 25, 's': 20, 'i': 18, 'h': 16, 'w': 15,
+              'o': 14, 'b': 12, 'c': 11, 'd': 10, 'f': 10, 'g': 9,
+              'm': 9, 'p': 8, 'l': 8, 'n': 7, 'r': 7, 'u': 6
+          };
+         
+          for (const [letter, weight] of Object.entries(commonStarters)) {
+              predictions[letter] = (predictions[letter] || 0) + weight;
+          }
+      }
+    
+      // Initialize with minimal base patterns
+      function initPredictiveModel() {
+          // Start with very basic English patterns
+          const basicWords = [
+              "the", "and", "that", "have", "for", "not", "with", "you", "this", "but",
+              "his", "from", "they", "say", "she", "will", "one", "all", "would", "there"
+          ];
+         
+          for (const word of basicWords) {
+              commonWords.add(word);
+              learnFromWord(word); // This will build initial patterns
+          }
+         
+          learningStats.words = basicWords.length;
+          updateStats();
+      }
+    
+      window.onload = function() {
+          createKeyboard();
+          initPredictiveModel();
+          updateKeyboardDisplay();
+      };
+
+
+      let startTime, interval, elapsed = 0;
+
+
+   function updateTime() {
+     const now = Date.now();
+     const time = new Date(now - startTime + elapsed);
+     const h = String(time.getUTCHours()).padStart(2, '0');
+     const m = String(time.getUTCMinutes()).padStart(2, '0');
+     const s = String(time.getUTCSeconds()).padStart(2, '0');
+     const ms = String(time.getUTCMilliseconds()).padStart(3, '0');
+     document.getElementById("time").textContent = `${h}:${m}:${s}.${ms}`;
+   }
+
+
+   function start() {
+     if (!interval) {
+       startTime = Date.now();
+       interval = setInterval(updateTime, 10); // Update every 10 ms for smoother display
+     }
+   }
+
+
+   function stop() {
+     if (interval) {
+       clearInterval(interval);
+       elapsed += Date.now() - startTime;
+       interval = null;
+     }
+   }
+
+
+   function reset() {
+     clearInterval(interval);
+     interval = null;
+     elapsed = 0;
+     document.getElementById("time").textContent = "00:00:00.000";
+   }
+
+
+   function calculateWPM() {
+   // Words = total characters / 5
+   const totalChars = currentText.trim().length;
+   const wordsTyped = totalChars / 5;
+
+
+   // Elapsed time in minutes
+   const timeMinutes = elapsed / (1000 * 60);
   
-   <h2 id="example-text"><b>Start typing - the keyboard learns as you go!</b></h2>
-   <div id="learning-indicator">🧠 Learning Mode</div>
-   <div id="text-display">|</div>
-   
-   <div id="keyboard">
-       <div class="keyboard-row" id="row0"></div>
-       <div class="keyboard-row" id="row1"></div>
-       <div class="keyboard-row" id="row2"></div>
-       <div class="keyboard-row" id="row3"></div>
-       <div class="keyboard-row">
-           <div class="key shift-key" id="shift">Shift</div>
-           <div class="key backspace" id="backspace">⌫</div>
-           <div class="key spacebar" id="space">Space</div>
-           <div class="key enter-key" id="enter">Enter</div>
-           <div class="key backspace" id="clear">Clear</div>
-       </div>
-   </div>
-   
-   <div id="instructions">
-       Type using your keyboard or click the virtual keys<br>
-       Larger keys = predicted next letters • Shift for capitals • Auto-capitalization enabled<br>
-       The typing area expands automatically as you write more • The keyboard learns from your typing patterns
-   </div>
+   if (timeMinutes === 0) return 0;
 
-   <div id="stats">
-       <div>Words learned: <span id="words-count">0</span></div>
-       <div>Patterns learned: <span id="patterns-count">0</span></div>
-   </div>
 
-   <script>
-       // Current text state
-       let currentText = "";
-       let lastCompletedWord = "";
-       let typingBuffer = "";
-       let learningStats = { words: 0, patterns: 0 };
-       let shiftActive = false;
-       let capsLockActive = false;
-      
-       // Keyboard layout
-       const keyboardLayout = [
-           [
-               {key: '1', shift: '!'}, {key: '2', shift: '@'}, {key: '3', shift: '#'}, 
-               {key: '4', shift: '$'}, {key: '5', shift: '%'}, {key: '6', shift: '^'}, 
-               {key: '7', shift: '&'}, {key: '8', shift: '*'}, {key: '9', shift: '('}, 
-               {key: '0', shift: ')'}, {key: '-', shift: '_'}, {key: '=', shift: '+'}
-           ],
-           [
-               {key: 'q'}, {key: 'w'}, {key: 'e'}, {key: 'r'}, {key: 't'}, 
-               {key: 'y'}, {key: 'u'}, {key: 'i'}, {key: 'o'}, {key: 'p'},
-               {key: '[', shift: '{'}, {key: ']', shift: '}'}
-           ],
-           [
-               {key: 'a'}, {key: 's'}, {key: 'd'}, {key: 'f'}, {key: 'g'}, 
-               {key: 'h'}, {key: 'j'}, {key: 'k'}, {key: 'l'},
-               {key: ';', shift: ':'}, {key: "'", shift: '"'}
-           ],
-           [
-               {key: 'z'}, {key: 'x'}, {key: 'c'}, {key: 'v'}, {key: 'b'}, 
-               {key: 'n'}, {key: 'm'}, {key: ',', shift: '<'}, 
-               {key: '.', shift: '>'}, {key: '/', shift: '?'}
-           ]
-       ];
-      
-       // Predictive model data
-       const letterPairs = {};
-       const commonWords = new Set();
-       let predictedLetters = [];
-      
-       // Create the keyboard
-       function createKeyboard() {
-           for (let i = 0; i < keyboardLayout.length; i++) {
-               const rowEl = document.getElementById(`row${i}`);
-              
-               for (let j = 0; j < keyboardLayout[i].length; j++) {
-                   const keyData = keyboardLayout[i][j];
-                   const key = document.createElement('div');
-                   
-                   if (keyData.key.match(/[0-9\-=\[\]';,.\//]/)) {
-                       key.className = 'key punctuation-key';
-                   } else {
-                       key.className = 'key';
-                   }
-                   
-                   key.id = `key-${keyData.key}`;
-                   key.textContent = keyData.key;
-                   key.addEventListener('click', () => handleKeyClick(keyData.key, keyData.shift));
-                   rowEl.appendChild(key);
-               }
-           }
-       }
-      
-       // Handle keyboard clicks
-       function handleKeyClick(letter, shiftVersion) {
-           let charToAdd = letter;
-           
-           if (shiftActive || capsLockActive) {
-               if (shiftVersion) {
-                   charToAdd = shiftVersion;
-               } else if (letter.match(/[a-z]/)) {
-                   charToAdd = letter.toUpperCase();
-               }
-           }
-           
-           // Auto-capitalize if needed
-           if (!shiftActive && !capsLockActive && letter.match(/[a-z]/)) {
-               if (shouldAutoCapitalize()) {
-                   charToAdd = letter.toUpperCase();
-               }
-           }
-           
-           addToTypingBuffer(charToAdd);
-           currentText += charToAdd;
-           
-           // Reset shift after use (but not caps lock)
-           if (shiftActive) {
-               shiftActive = false;
-               updateShiftDisplay();
-           }
-           
-           updateDisplay();
-           predictNextLetters();
-           updateVisualPredictions();
-       }
-       
-       // Check if we should auto-capitalize
-       function shouldAutoCapitalize() {
-           if (currentText.length === 0) return true;
-           
-           // Capitalize after sentence-ending punctuation
-           const lastTwoChars = currentText.slice(-2);
-           if (lastTwoChars.match(/[.!?]\s$/)) return true;
-           
-           // Capitalize after newline
-           if (currentText.endsWith('\n')) return true;
-           
-           return false;
-       }
-      
-       // Handle physical keyboard input
-       document.addEventListener('keydown', (event) => {
-           const key = event.key;
-           
-           if (event.key === 'Shift') {
-               if (!shiftActive) {
-                   shiftActive = true;
-                   updateShiftDisplay();
-               }
-               return;
-           }
-           
-           if (event.key === 'CapsLock') {
-               capsLockActive = !capsLockActive;
-               updateCapsLockDisplay();
-               return;
-           }
-          
-           if (/^[a-zA-Z0-9]$/.test(key)) {
-               let charToAdd = key.toLowerCase();
-               
-               // Handle capitalization
-               if ((shiftActive && !capsLockActive) || (!shiftActive && capsLockActive)) {
-                   if (charToAdd.match(/[a-z]/)) {
-                       charToAdd = charToAdd.toUpperCase();
-                   }
-               } else if (!shiftActive && !capsLockActive && charToAdd.match(/[a-z]/)) {
-                   if (shouldAutoCapitalize()) {
-                       charToAdd = charToAdd.toUpperCase();
-                   }
-               }
-               
-               addToTypingBuffer(charToAdd);
-               currentText += charToAdd;
-               
-               if (shiftActive) {
-                   shiftActive = false;
-                   updateShiftDisplay();
-               }
-               
-               updateDisplay();
-               predictNextLetters();
-               updateVisualPredictions();
-           } else if (event.key === 'Backspace') {
-               handleBackspace();
-           } else if (event.key === ' ') {
-               addToTypingBuffer(' ');
-               currentText += ' ';
-               updateDisplay();
-               predictNextLetters();
-               updateVisualPredictions();
-           } else if (event.key === 'Enter') {
-               addToTypingBuffer('\n');
-               currentText += '\n';
-               updateDisplay();
-               predictNextLetters();
-               updateVisualPredictions();
-           } else {
-               // Handle punctuation and special characters
-               const punctuationMap = {
-                   '!': '!', '@': '@', '#': '#', '$': '$', '%': '%', '^': '^',
-                   '&': '&', '*': '*', '(': '(', ')': ')', '_': '_', '+': '+',
-                   '[': '[', ']': ']', '{': '{', '}': '}', ';': ';', ':': ':',
-                   "'": "'", '"': '"', ',': ',', '<': '<', '.': '.', '>': '>',
-                   '/': '/', '?': '?', '-': '-', '=': '='
-               };
-               
-               if (punctuationMap[key]) {
-                   addToTypingBuffer(key);
-                   currentText += key;
-                   updateDisplay();
-                   predictNextLetters();
-                   updateVisualPredictions();
-               }
-           }
-       });
-       
-       // Handle keyup for shift
-       document.addEventListener('keyup', (event) => {
-           if (event.key === 'Shift') {
-               // Don't auto-disable shift on keyup since we want it to work for one character
-           }
-       });
-       
-       // Update shift key display
-       function updateShiftDisplay() {
-           const shiftKey = document.getElementById('shift');
-           if (shiftActive) {
-               shiftKey.classList.add('shift-active');
-           } else {
-               shiftKey.classList.remove('shift-active');
-           }
-           updateKeyboardDisplay();
-       }
-       
-       // Update caps lock display
-       function updateCapsLockDisplay() {
-           const shiftKey = document.getElementById('shift');
-           if (capsLockActive) {
-               shiftKey.classList.add('caps-lock-active');
-               shiftKey.textContent = 'CAPS';
-           } else {
-               shiftKey.classList.remove('caps-lock-active');
-               shiftKey.textContent = 'Shift';
-           }
-           updateKeyboardDisplay();
-       }
-       
-       // Update keyboard display based on shift/caps state
-       function updateKeyboardDisplay() {
-           for (let i = 0; i < keyboardLayout.length; i++) {
-               for (let j = 0; j < keyboardLayout[i].length; j++) {
-                   const keyData = keyboardLayout[i][j];
-                   const keyElement = document.getElementById(`key-${keyData.key}`);
-                   
-                   if (keyElement) {
-                       if (shiftActive || capsLockActive) {
-                           if (keyData.shift) {
-                               keyElement.textContent = keyData.shift;
-                           } else if (keyData.key.match(/[a-z]/)) {
-                               keyElement.textContent = keyData.key.toUpperCase();
-                           }
-                       } else {
-                           keyElement.textContent = keyData.key;
-                       }
-                   }
-               }
-           }
-       }
-      
-       // Add character to typing buffer for learning
-       function addToTypingBuffer(char) {
-           typingBuffer += char;
-           
-           // Learn from completed words (when space or punctuation is typed)
-           if (char === ' ' || char.match(/[.!?;:,\n]/)) {
-               const words = typingBuffer.replace(/[^\w\s]/g, ' ').trim().split(/\s+/);
-               for (const word of words) {
-                   if (word.length > 1) {
-                       learnFromWord(word.toLowerCase());
-                       showLearningIndicator();
-                   }
-               }
-               typingBuffer = "";
-           }
-           
-           // Also learn from longer phrases (every 20 characters)
-           if (typingBuffer.length >= 20) {
-               learnFromPhrase(typingBuffer);
-               typingBuffer = typingBuffer.slice(-10); // Keep last 10 chars for context
-           }
-       }
-      
-       // Learn patterns from a single word
-       function learnFromWord(word) {
-           if (!word || word.length <= 1) return;
-           
-           word = word.toLowerCase().trim();
-           
-           // Add to vocabulary if new
-           if (!commonWords.has(word)) {
-               commonWords.add(word);
-               learningStats.words++;
-               updateStats();
-           }
-           
-           // Learn letter patterns with adaptive weighting
-           const baseWeight = Math.min(word.length, 8); // Longer words get more weight
-           
-           // Single letter context
-           for (let i = 0; i < word.length - 1; i++) {
-               const context = word[i];
-               const nextChar = word[i + 1];
-               addLetterPattern(context, nextChar, baseWeight);
-           }
-           
-           // Two letter context (more important for learning)
-           for (let i = 0; i < word.length - 2; i++) {
-               const context = word.substring(i, i + 2);
-               const nextChar = word[i + 2];
-               addLetterPattern(context, nextChar, baseWeight * 2);
-           }
-           
-           // Three letter context (most important for user-specific patterns)
-           for (let i = 0; i < word.length - 3; i++) {
-               const context = word.substring(i, i + 3);
-               const nextChar = word[i + 3];
-               addLetterPattern(context, nextChar, baseWeight * 3);
-           }
-       }
-       
-       // Learn from longer phrases
-       function learnFromPhrase(phrase) {
-           const words = phrase.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/);
-           for (const word of words) {
-               if (word.length > 1) {
-                   learnFromWord(word);
-               }
-           }
-       }
-       
-       // Add a letter pattern to the model
-       function addLetterPattern(context, next, weight) {
-           if (!letterPairs[context]) {
-               letterPairs[context] = {};
-           }
-           
-           const oldWeight = letterPairs[context][next] || 0;
-           letterPairs[context][next] = oldWeight + weight;
-           
-           if (oldWeight === 0) {
-               learningStats.patterns++;
-           }
-       }
-       
-       // Show learning indicator animation
-       function showLearningIndicator() {
-           const indicator = document.getElementById('learning-indicator');
-           indicator.classList.add('active');
-           setTimeout(() => {
-               indicator.classList.remove('active');
-           }, 1000);
-       }
-       
-       // Update learning statistics
-       function updateStats() {
-           document.getElementById('words-count').textContent = learningStats.words;
-           document.getElementById('patterns-count').textContent = learningStats.patterns;
-       }
-       
-       // Handle shift button
-       document.getElementById('shift').addEventListener('click', () => {
-           if (capsLockActive) {
-               capsLockActive = false;
-               updateCapsLockDisplay();
-           } else {
-               shiftActive = !shiftActive;
-               updateShiftDisplay();
-           }
-       });
-      
-       // Handle backspace button
-       document.getElementById('backspace').addEventListener('click', handleBackspace);
-      
-       function handleBackspace() {
-           if (currentText.length > 0) {
-               // Remove from typing buffer too
-               if (typingBuffer.length > 0) {
-                   typingBuffer = typingBuffer.slice(0, -1);
-               }
-               
-               currentText = currentText.substring(0, currentText.length - 1);
-               updateDisplay();
-               predictNextLetters();
-               updateVisualPredictions();
-           }
-       }
-      
-       // Handle space button
-       document.getElementById('space').addEventListener('click', () => {
-           addToTypingBuffer(' ');
-           currentText += ' ';
-           updateDisplay();
-           predictNextLetters();
-           updateVisualPredictions();
-       });
-       
-       // Handle enter button
-       document.getElementById('enter').addEventListener('click', () => {
-           addToTypingBuffer('\n');
-           currentText += '\n';
-           updateDisplay();
-           predictNextLetters();
-           updateVisualPredictions();
-       });
-      
-       // Handle clear button
-       document.getElementById('clear').addEventListener('click', () => {
-           currentText = '';
-           typingBuffer = '';
-           updateDisplay();
-           predictNextLetters();
-           updateVisualPredictions();
-       });
-      
-       // Update the text display
-       function updateDisplay() {
-           const displayText = currentText.replace(/\n/g, '<br>');
-           const textDisplay = document.getElementById('text-display');
-           
-           // Use innerHTML to handle line breaks properly
-           textDisplay.innerHTML = displayText + '<span style="opacity: 0.6;">|</span>';
-           
-           // Auto-expand based on content length
-           if (currentText.length > 200) {
-               textDisplay.classList.add('expanded');
-               textDisplay.style.minHeight = '120px';
-           } else if (currentText.length > 100) {
-               textDisplay.style.minHeight = '80px';
-           } else {
-               textDisplay.classList.remove('expanded');
-               textDisplay.style.minHeight = '50px';
-           }
-           
-           // Auto-scroll to bottom if content overflows
-           textDisplay.scrollTop = textDisplay.scrollHeight;
-       }
-      
-       // Update visual keyboard to show predictions
-       function updateVisualPredictions() {
-           // Reset all letter keys to default appearance
-           for (let i = 0; i < keyboardLayout.length; i++) {
-               for (let j = 0; j < keyboardLayout[i].length; j++) {
-                   const keyData = keyboardLayout[i][j];
-                   if (keyData.key.match(/[a-z]/)) {
-                       const key = document.getElementById(`key-${keyData.key}`);
-                       key.style.backgroundColor = '#444';
-                       key.style.width = '40px';
-                       key.style.height = '40px';
-                       key.style.fontSize = '16px';
-                   }
-               }
-           }
-          
-           // Highlight and resize predicted letters
-           for (let i = 0; i < predictedLetters.length; i++) {
-               const letter = predictedLetters[i].letter;
-               const score = predictedLetters[i].score;
-               const key = document.getElementById(`key-${letter}`);
-              
-               if (key) {
-                   let scale;
-                   let color;
-                  
-                   if (i === 0) {
-                       scale = 1.8;
-                       color = 'rgb(50, 150, 170)';  // Best prediction - brighter
-                   } else if (i < 3) {
-                       scale = 1.5 - i * 0.1;
-                       color = 'rgb(60, 130, 150)';  // Top 3
-                   } else if (i < 5) {
-                       scale = 1.3;
-                       color = 'rgb(70, 110, 130)';  // Top 5
-                   } else {
-                       scale = 1.15;
-                       color = 'rgb(80, 90, 110)';   // Others
-                   }
-                  
-                   key.style.backgroundColor = color;
-                   key.style.width = `${40 * scale}px`;
-                   key.style.height = `${40 * scale}px`;
-                   key.style.fontSize = `${16 * Math.sqrt(scale)}px`;
-                   key.style.zIndex = 10 - i;
-               }
-           }
-       }
-      
-       // Get next letter predictions based on current text
-       function predictNextLetters() {
-           const predictions = {};
-          
-           if (currentText.length === 0) {
-               predictedLetters = [];
-               return;
-           }
-          
-           // Get current word (considering punctuation as word boundaries)
-           const words = currentText.split(/[\s\n.!?;:,]+/);
-           const currentWord = words[words.length - 1].toLowerCase().replace(/[^\w]/g, '');
-          
-           if (currentWord.length === 0) {
-               // At beginning of new word - predict common starting letters
-               addCommonStartingLetters(predictions);
-           } else {
-               // Use learned patterns for prediction
-               
-               // Try 3-character context first (most specific)
-               if (currentWord.length >= 3) {
-                   const context = currentWord.substring(currentWord.length - 3);
-                   if (letterPairs[context]) {
-                       for (const [nextLetter, weight] of Object.entries(letterPairs[context])) {
-                           predictions[nextLetter] = (predictions[nextLetter] || 0) + weight * 4;
-                       }
-                   }
-               }
-               
-               // Try 2-character context
-               if (currentWord.length >= 2) {
-                   const context = currentWord.substring(currentWord.length - 2);
-                   if (letterPairs[context]) {
-                       for (const [nextLetter, weight] of Object.entries(letterPairs[context])) {
-                           predictions[nextLetter] = (predictions[nextLetter] || 0) + weight * 2;
-                       }
-                   }
-               }
-               
-               // Try 1-character context
-               const lastChar = currentWord[currentWord.length - 1];
-               if (letterPairs[lastChar]) {
-                   for (const [nextLetter, weight] of Object.entries(letterPairs[lastChar])) {
-                       predictions[nextLetter] = (predictions[nextLetter] || 0) + weight;
-                   }
-               }
-               
-               // Word completion predictions
-               for (const word of commonWords) {
-                   if (word.startsWith(currentWord) && currentWord.length < word.length) {
-                       const nextLetter = word[currentWord.length];
-                       const completionBonus = word.length === currentWord.length + 1 ? 50 : 25;
-                       predictions[nextLetter] = (predictions[nextLetter] || 0) + completionBonus;
-                   }
-               }
-           }
-          
-           // Convert to array and sort by score
-           predictedLetters = Object.entries(predictions)
-               .filter(([letter, score]) => letter.match(/[a-z]/)) // Only show letter predictions
-               .map(([letter, score]) => ({ letter, score }))
-               .sort((a, b) => b.score - a.score)
-               .slice(0, 8);
-       }
-       
-       // Add common starting letters for new words
-       function addCommonStartingLetters(predictions) {
-           const commonStarters = {
-               't': 30, 'a': 25, 's': 20, 'i': 18, 'h': 16, 'w': 15,
-               'o': 14, 'b': 12, 'c': 11, 'd': 10, 'f': 10, 'g': 9,
-               'm': 9, 'p': 8, 'l': 8, 'n': 7, 'r': 7, 'u': 6
-           };
-           
-           for (const [letter, weight] of Object.entries(commonStarters)) {
-               predictions[letter] = (predictions[letter] || 0) + weight;
-           }
-       }
-      
-       // Initialize with minimal base patterns
-       function initPredictiveModel() {
-           // Start with very basic English patterns
-           const basicWords = [
-               "the", "and", "that", "have", "for", "not", "with", "you", "this", "but",
-               "his", "from", "they", "say", "she", "will", "one", "all", "would", "there"
-           ];
-           
-           for (const word of basicWords) {
-               commonWords.add(word);
-               learnFromWord(word); // This will build initial patterns
-           }
-           
-           learningStats.words = basicWords.length;
-           updateStats();
-       }
-      
-       window.onload = function() {
-           createKeyboard();
-           initPredictiveModel();
-           updateKeyboardDisplay();
-       };
-   </script>
+   const wpm = Math.round(wordsTyped / timeMinutes);
+   return wpm;
+}
+
+
+  </script>
 </body>
 </html>
