@@ -1040,29 +1040,40 @@
   
     // Calculate typing metrics
     function calculateMetrics() {
-        // Basic WPM calculation (chars / 5 / minutes)
-        const timeMinutes = elapsed / (1000 * 60);
-        const charsPerWord = 5;
-        const rawWpm = Math.round((totalCharsTyped / charsPerWord) / timeMinutes) || 0;
-      
-        // Accuracy calculation
-        const accuracy = totalCharsTyped > 0
-            ? Math.round((correctCharsTyped / totalCharsTyped) * 100)
-            : 100;
-      
-        // Adjusted WPM (accounts for errors)
-        const adjWpm = Math.round(rawWpm * (accuracy / 100));
-      
-        // Minimum String Distance (Levenshtein distance)
-        const msd = calculateLevenshteinDistance(currentText, targetSentence);
-      
-        return {
-            wpm: rawWpm,
-            adjWpm: adjWpm,
-            accuracy: accuracy,
-            msd: msd
-        };
-    }
+    // Normalization function
+    const normalize = (str) => str.trim().replace(/\s+/g, ' ');
+    
+    // Basic WPM calculation
+    const timeMinutes = elapsed / (1000 * 60);
+    const charsPerWord = 5;
+    const rawWpm = Math.round((totalCharsTyped / charsPerWord) / timeMinutes) || 0;
+    
+    // Accuracy calculation
+    const accuracy = totalCharsTyped > 0
+        ? Math.round((correctCharsTyped / totalCharsTyped) * 100)
+        : 100;
+    
+    // Adjusted WPM
+    const adjWpm = Math.round(rawWpm * (accuracy / 100));
+    
+    // MSD calculation with normalization
+    const msd = calculateLevenshteinDistance(
+        normalize(currentText),
+        normalize(targetSentence)
+    );
+    
+    // Debug output
+    console.log("Typed:", JSON.stringify(currentText));
+    console.log("Target:", JSON.stringify(targetSentence));
+    console.log("MSD:", msd);
+    
+    return {
+        wpm: rawWpm,
+        adjWpm: adjWpm,
+        accuracy: accuracy,
+        msd: msd
+    };
+}
   
     // Calculate Levenshtein distance (Minimum String Distance)
     function calculateLevenshteinDistance(a, b) {
