@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -20,9 +21,6 @@
         overflow-y: auto;
     }
 
-
-
-
     #text-display {
         font-size: 28px;
         min-height: 50px;
@@ -43,24 +41,15 @@
         resize: vertical;
     }
 
-
-
-
     #text-display:focus-within {
         border-color: #0a5c2e;
         box-shadow: 0 0 10px rgba(74, 222, 128, 0.2);
     }
 
-
-
-
     #text-display.expanded {
         font-size: 24px;
         max-width: 900px;
     }
-
-
-
 
     #learning-indicator {
         position: absolute;
@@ -74,17 +63,11 @@
         transition: all 0.3s ease;
     }
 
-
-
-
     #learning-indicator.active {
         background-color: #0a5c2e;
         color: #4ade80;
         box-shadow: 0 0 10px rgba(74, 222, 128, 0.3);
     }
-
-
-
 
     #keyboard {
         display: flex;
@@ -95,24 +78,15 @@
         transition: all 0.3s ease;
     }
 
-
-
-
     .text-display-expanded + #keyboard {
         margin-top: 20px;
     }
-
-
-
 
     .keyboard-row {
         display: flex;
         justify-content: center;
         gap: 5px;
     }
-
-
-
 
     .key {
         background-color: #444;
@@ -136,26 +110,17 @@
         transform: translateY(2px);
     }
 
-
-
-
     .key.shift-active {
         background-color: #0a5c2e;
         color: #4ade80;
         box-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
     }
 
-
-
-
     .key.caps-lock-active {
         background-color: #5c0a2e;
         color: #de4a80;
         box-shadow: 0 0 8px rgba(222, 74, 128, 0.4);
     }
-
-
-
 
     #instructions {
         margin-top: 30px;
@@ -164,36 +129,21 @@
         text-align: center;
     }
 
-
-
-
     .spacebar {
         width: 200px;
     }
-
-
-
 
     .backspace {
         width: 80px;
     }
 
-
-
-
     .shift-key {
         width: 70px;
     }
 
-
-
-
     .enter-key {
         width: 90px;
     }
-
-
-
 
     #stats {
         position: absolute;
@@ -206,16 +156,10 @@
         border-radius: 6px;
     }
 
-
-
-
     .punctuation-key {
         width: 35px;
         font-size: 14px;
     }
-
-
-
 
     #choices {
         display: none; /* hides the list */
@@ -239,6 +183,80 @@
         font-weight: bold;
         color: #4ade80;
     }
+
+    /* Results modal styles */
+    #results-modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(5px);
+    }
+
+    .modal-content {
+        background-color: #333;
+        margin: 10% auto;
+        padding: 30px;
+        border: none;
+        border-radius: 15px;
+        width: 80%;
+        max-width: 500px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content h2 {
+        color: #4ade80;
+        margin-bottom: 20px;
+        font-size: 28px;
+    }
+
+    .results-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin: 20px 0;
+    }
+
+    .result-item {
+        background-color: #444;
+        padding: 15px;
+        border-radius: 10px;
+        border: 2px solid #555;
+    }
+
+    .result-label {
+        font-size: 14px;
+        color: #aaa;
+        margin-bottom: 5px;
+    }
+
+    .result-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #4ade80;
+    }
+
+    .continue-btn {
+        background-color: #0a5c2e;
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        margin-top: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .continue-btn:hover {
+        background-color: #0d7a3a;
+        transform: translateY(-2px);
+    }
 </style>
 </head>
 <body>
@@ -248,9 +266,6 @@
      <div class="metric">Accuracy: <span class="metric-value" id="accuracy">100%</span></div>
      <div class="metric">MSD: <span class="metric-value" id="msd">0</span></div>
  </div>
-
-
-
 
  <h2 id="result"></h2>
 <div id="learning-indicator">🧠 Learning Mode</div>
@@ -271,45 +286,64 @@
 <div id="instructions">
     Type using your keyboard or click the virtual keys<br>
     Larger keys = predicted next letters • Shift for capitals • Auto-capitalization enabled<br>
-    The typing area expands automatically as you write more • The keyboard learns from your typing patterns
+    The typing area expands automatically as you write more • The keyboard learns from your typing patterns<br>
+    <strong>Press Enter to finish and see your results!</strong>
 </div>
-
-
-
 
 <div id="stats">
     <div>Words learned: <span id="words-count">0</span></div>
     <div>Patterns learned: <span id="patterns-count">0</span></div>
 </div>
 
-
-
+<!-- Results Modal -->
+<div id="results-modal">
+    <div class="modal-content">
+        <h2>🎯 Typing Results</h2>
+        <div class="results-grid">
+            <div class="result-item">
+                <div class="result-label">Words Per Minute</div>
+                <div class="result-value" id="modal-wpm">0</div>
+            </div>
+            <div class="result-item">
+                <div class="result-label">Adjusted WPM</div>
+                <div class="result-value" id="modal-adj-wpm">0</div>
+            </div>
+            <div class="result-item">
+                <div class="result-label">Accuracy</div>
+                <div class="result-value" id="modal-accuracy">100%</div>
+            </div>
+            <div class="result-item">
+                <div class="result-label">Min String Distance</div>
+                <div class="result-value" id="modal-msd">0</div>
+            </div>
+        </div>
+        <button class="continue-btn" onclick="startNewRound()">Start New Round</button>
+    </div>
+</div>
 
 <ul id="choices">
-     <li>She packed twelve blue pens in her small bag.</li>
-     <li>Every bird sang sweet songs in the quiet dawn.</li>
-     <li>They watched clouds drift across the golden sky.</li>
-     <li>A clever mouse slipped past the sleepy cat.</li>
-     <li>Green leaves danced gently in the warm breeze.</li>
-     <li>He quickly wrote notes before the test began.</li>
-     <li>The tall man wore boots made of soft leather.</li>
-     <li>Old clocks ticked loudly in the silent room.</li>
-     <li>She smiled while sipping tea on the front porch.</li>
-     <li>We found a hidden path behind the old barn.</li>
-     <li>Sunlight streamed through cracks in the ceiling.</li>
-     <li>Dogs barked at shadows moving through the yard.</li>
-     <li>Rain tapped softly against the window glass.</li>
-     <li>Bright stars twinkled above the quiet valley.</li>
-     <li>He tied the package with ribbon and string.</li>
-     <li>A sudden breeze blew papers off the desk.</li>
-     <li>The curious child opened every single drawer.</li>
-     <li>Fresh apples fell from the heavy tree limbs.</li>
-     <li>The artist painted scenes from her memory.</li>
-     <li>They danced all night under the glowing moon.</li>
+     <li>She packed twelve blue pens in her small bag</li>
+     <li>Every bird sang sweet songs in the quiet dawn</li>
+     <li>They watched clouds drift across the golden sky</li>
+     <li>A clever mouse slipped past the sleepy cat</li>
+     <li>Green leaves danced gently in the warm breeze</li>
+     <li>He quickly wrote notes before the test began</li>
+     <li>The tall man wore boots made of soft leather</li>
+     <li>Old clocks ticked loudly in the silent room</li>
+     <li>She smiled while sipping tea on the front porch</li>
+     <li>We found a hidden path behind the old barn</li>
+     <li>Sunlight streamed through cracks in the ceiling</li>
+     <li>Dogs barked at shadows moving through the yard</li>
+     <li>Rain tapped softly against the window glass</li>
+     <li>Bright stars twinkled above the quiet valley</li>
+     <li>He tied the package with ribbon and string</li>
+     <li>A sudden breeze blew papers off the desk</li>
+     <li>The curious child opened every single drawer</li>
+     <li>Fresh apples fell from the heavy tree limbs</li>
+     <li>The artist painted scenes from her memory</li>
+     <li>They danced all night under the glowing moon</li>
    </ul>
-
-
-
+   
 
 <script>
     // Current text state
@@ -534,19 +568,8 @@
             predictNextLetters();
             updateVisualPredictions();
         } else if (event.key === 'Enter') {
-            stop();
-            addToTypingBuffer('\n');
-            currentText += '\n';
-            updateDisplay();
-            predictNextLetters();
-            updateVisualPredictions();
-          
-            const metrics = calculateMetrics();
-            document.getElementById("wpm").textContent = metrics.wpm;
-            document.getElementById("adj-wpm").textContent = metrics.adjWpm;
-            document.getElementById("accuracy").textContent = metrics.accuracy + '%';
-            document.getElementById("msd").textContent = metrics.msd;
-            reset();
+            // FIXED: Show results instead of adding newline
+            handleEnterKey();
         } else {
             // Handle punctuation and special characters
             const punctuationMap = {
@@ -583,6 +606,55 @@
             }
         }
     });
+
+    // NEW: Handle Enter key to show results
+    function handleEnterKey() {
+        // Stop the timer
+        stop();
+        
+        // Calculate metrics
+        const metrics = calculateMetrics();
+        
+        // Update both the live metrics and modal
+        document.getElementById("wpm").textContent = metrics.wpm;
+        document.getElementById("adj-wpm").textContent = metrics.adjWpm;
+        document.getElementById("accuracy").textContent = metrics.accuracy + '%';
+        document.getElementById("msd").textContent = metrics.msd;
+        
+        document.getElementById("modal-wpm").textContent = metrics.wpm;
+        document.getElementById("modal-adj-wpm").textContent = metrics.adjWpm;
+        document.getElementById("modal-accuracy").textContent = metrics.accuracy + '%';
+        document.getElementById("modal-msd").textContent = metrics.msd;
+        
+        // Show the results modal
+        document.getElementById("results-modal").style.display = "block";
+    }
+
+    // NEW: Start a new round
+    function startNewRound() {
+        // Hide the modal
+        document.getElementById("results-modal").style.display = "none";
+        
+        // Reset everything
+        reset();
+        
+        // Reset metrics display
+        document.getElementById("wpm").textContent = '0';
+        document.getElementById("adj-wpm").textContent = '0';
+        document.getElementById("accuracy").textContent = '100%';
+        document.getElementById("msd").textContent = '0';
+        
+        // Pick a new random sentence
+        pickRandom();
+        
+        // Clear the text display
+        currentText = '';
+        updateDisplay();
+        
+        // Clear predictions
+        predictNextLetters();
+        updateVisualPredictions();
+    }
  
     // Handle keyup for shift
     document.addEventListener('keyup', (event) => {
@@ -786,22 +858,10 @@
         predictNextLetters();
         updateVisualPredictions();
     });
- 
-    // Handle enter button
+
+    // Handle enter button - FIXED to show results
     document.getElementById('enter').addEventListener('click', () => {
-        stop();
-        addToTypingBuffer('\n');
-        currentText += '\n';
-        updateDisplay();
-        predictNextLetters();
-        updateVisualPredictions();
-      
-        const metrics = calculateMetrics();
-        document.getElementById("wpm").textContent = metrics.wpm;
-        document.getElementById("adj-wpm").textContent = metrics.adjWpm;
-        document.getElementById("accuracy").textContent = metrics.accuracy + '%';
-        document.getElementById("msd").textContent = metrics.msd;
-        reset();
+        handleEnterKey();
     });
      // Handle clear button
     document.getElementById('clear').addEventListener('click', () => {
@@ -969,23 +1029,29 @@
     function initPredictiveModel() {
         // Start with very basic English patterns
         const basicWords = [
-            "she", "packed", "twelve", "blue", "pens", "in", "her", "small", "bag", "every",
-            "bird", "sang", "sweet", "songs", "the", "quiet", "dawn", "they", "watched", "clouds",
-            "drift", "across", "golden", "sky", "a", "clever", "mouse", "slipped", "past",
-            "sleepy", "cat", "green", "leaves", "danced", "gently", "warm", "breeze", "he",
-            "quickly", "wrote", "notes", "before", "test", "began", "tall", "man", "wore", "boots",
-             "made", "of", "soft", "leather", "old", "clocks", "ticked", "loudly", "silent",
-             "room", "smiled", "while", "sipping", "tea", "on", "front", "porch", "we", "found",
-             "hidden", "path", "behind", "barn", "sunlight", "streamed", "through", "cracks", "ceiling",
-             "dogs", "barked", "at", "shadows", "moving", "yard", "rain", "tapped", "softly",
-             "against", "window", "glass", "bright", "stars", "twinkled", "above", "valley",
-             "tied", "package", "with", "ribbon", "and", "string", "sudden", "blew", "papers",
-             "off", "desk", "curious", "child", "opened", "every", "single", "drawer", "fresh",
-             "apples", "fell", "from", "heavy", "tree", "limbs", "artist", "painted", "scenes",
-             "memory", "danced", "all", "night", "under", "glowing", "moon"
-
-
+           "the", "be", "to", "of", "and", "a", "in", "that", "have", "I", "it", "for", "not", "on", "with", "he", "as", "you", "do", "at",
+           "this", "but", "his", "by", "from", "they", "we", "say", "her", "she", "or", "an", "will", "my", "one", "all", "would", "there",
+           "their", "what", "so", "up", "out", "if", "about", "who", "get", "which", "go", "me", "when", "make", "can", "like", "time",
+           "no", "just", "him", "know", "take", "people", "into", "year", "your", "good", "some", "could", "them", "see", "other", "than",
+           "then", "now", "look", "only", "come", "its", "over", "think", "also", "back", "after", "use", "two", "how", "our", "work",
+           "first", "well", "way", "even", "new", "want", "because", "any", "these", "give", "day", "most", "us", "is", "are", "was",
+           "were", "has", "had", "did", "shall", "should", "may", "might", "must", "can", "could", "will", "would", "said", "told",
+           "asked", "went", "made", "know", "see", "looked", "thought", "come", "back", "take", "got", "put", "showed", "felt",
+           "left", "called", "good", "new", "first", "last", "long", "great", "little", "own", "other", "old", "right", "big", "high",
+           "different", "small", "large", "next", "early", "young", "important", "few", "public", "bad", "same", "able", "human",
+           "local", "social", "possible", "whole", "free", "true", "certain", "special", "general", "available", "common", "major",
+           "better", "best", "real", "sure", "clear", "full", "easy", "strong", "likely", "short", "single", "personal", "current",
+           "national", "hard", "major", "political", "large", "small", "happy", "serious", "simple", "right", "left", "central",
+           "recent", "low", "dead", "wide", "late", "close", "fine", "white", "black", "red", "green", "blue", "yellow", "brown",
+           "pink", "orange", "gray", "purple", "gold", "silver", "north", "south", "east", "west", "morning", "night", "day", "year",
+           "week", "month", "hour", "minute", "second", "time", "home", "house", "family", "father", "mother", "child", "friend",
+           "man", "woman", "boy", "girl", "person", "people", "child", "school", "student", "teacher", "work", "job", "office",
+           "money", "car", "city", "country", "road", "water", "food", "air", "fire", "earth", "love", "life", "world", "hand", "eye",
+           "head", "heart", "foot", "leg", "arm", "face", "hair", "body", "mind", "voice", "song", "music", "game", "book", "story",
+           "word", "sentence", "language", "country", "city", "place", "thing", "fact", "idea", "problem", "question", "answer", "reason",
+           "help", "friend", "family", "group", "team", "company", "party", "government", "law", "order", "power", "right", "left"
         ];
+
      
         for (const word of basicWords) {
             commonWords.add(word);
@@ -1004,9 +1070,6 @@
         }
     }
 
-
-
-
     function stop() {
         if (interval) {
             clearInterval(interval);
@@ -1014,9 +1077,6 @@
             interval = null;
         }
     }
-
-
-
 
     function reset() {
         clearInterval(interval);
@@ -1040,39 +1100,39 @@
   
     // Calculate typing metrics
     function calculateMetrics() {
-    // Normalization function
-    const normalize = (str) => str.trim().replace(/\s+/g, ' ');
-    
-    // Basic WPM calculation
-    const timeMinutes = elapsed / (1000 * 60);
-    const charsPerWord = 5;
-    const rawWpm = Math.round((totalCharsTyped / charsPerWord) / timeMinutes) || 0;
-    
-    // Accuracy calculation
-    const accuracy = totalCharsTyped > 0
-        ? Math.round((correctCharsTyped / totalCharsTyped) * 100)
-        : 100;
-    
-    // Adjusted WPM
-    const adjWpm = Math.round(rawWpm * (accuracy / 100));
-    
-    // MSD calculation with normalization
-    const msd = calculateLevenshteinDistance(
-        normalize(currentText),
-        normalize(targetSentence)
-    );
-    
-    // Debug output
-    console.log("Typed:", JSON.stringify(currentText));
-    console.log("Target:", JSON.stringify(targetSentence));
-    console.log("MSD:", msd);
-    
-    return {
-        wpm: rawWpm,
-        adjWpm: adjWpm,
-        accuracy: accuracy,
-        msd: msd
-    };
+   // Normalization function
+   const normalize = (str) => str.trim().replace(/\s+/g, ' ');
+  
+   // Basic WPM calculation
+   const timeMinutes = elapsed / (1000 * 60);
+   const charsPerWord = 5;
+   const rawWpm = Math.round((totalCharsTyped / charsPerWord) / timeMinutes) || 0;
+  
+   // Accuracy calculation
+   const accuracy = totalCharsTyped > 0
+       ? Math.round((correctCharsTyped / totalCharsTyped) * 100)
+       : 100;
+  
+   // Adjusted WPM
+   const adjWpm = Math.round(rawWpm * (accuracy / 100));
+  
+   // MSD calculation with normalization
+   const msd = calculateLevenshteinDistance(
+       normalize(currentText),
+       normalize(targetSentence)
+   );
+  
+   // Debug output
+   console.log("Typed:", JSON.stringify(currentText));
+   console.log("Target:", JSON.stringify(targetSentence));
+   console.log("MSD:", msd);
+  
+   return {
+       wpm: rawWpm,
+       adjWpm: adjWpm,
+       accuracy: accuracy,
+       msd: msd
+   };
 }
   
     // Calculate Levenshtein distance (Minimum String Distance)
@@ -1116,9 +1176,6 @@
         targetSentence = items[randomIndex].textContent;
         document.getElementById("result").textContent = targetSentence;
     }
-
-
-
 
     window.onload = function() {
         createKeyboard();
