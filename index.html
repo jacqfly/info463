@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Adaptive Predictive Keyboard</title>
+<title>Adaptiv Predictive Keyboard</title>
 <style>
     body {
         font-family: 'Arial', sans-serif;
@@ -309,11 +308,11 @@
                 <div class="result-value" id="modal-adj-wpm">0</div>
             </div>
             <div class="result-item">
-                <div class="result-label">Accuracy</div>
+                <div class="result-label">Process Accuracy</div>
                 <div class="result-value" id="modal-accuracy">100%</div>
             </div>
             <div class="result-item">
-                <div class="result-label">Min String Distance</div>
+                <div class="result-label">MSD</div>
                 <div class="result-value" id="modal-msd">0</div>
             </div>
         </div>
@@ -343,7 +342,6 @@
      <li>The artist painted scenes from her memory</li>
      <li>They danced all night under the glowing moon</li>
    </ul>
-   
 
 <script>
     // Current text state
@@ -1029,29 +1027,21 @@
     function initPredictiveModel() {
         // Start with very basic English patterns
         const basicWords = [
-           "the", "be", "to", "of", "and", "a", "in", "that", "have", "I", "it", "for", "not", "on", "with", "he", "as", "you", "do", "at",
-           "this", "but", "his", "by", "from", "they", "we", "say", "her", "she", "or", "an", "will", "my", "one", "all", "would", "there",
-           "their", "what", "so", "up", "out", "if", "about", "who", "get", "which", "go", "me", "when", "make", "can", "like", "time",
-           "no", "just", "him", "know", "take", "people", "into", "year", "your", "good", "some", "could", "them", "see", "other", "than",
-           "then", "now", "look", "only", "come", "its", "over", "think", "also", "back", "after", "use", "two", "how", "our", "work",
-           "first", "well", "way", "even", "new", "want", "because", "any", "these", "give", "day", "most", "us", "is", "are", "was",
-           "were", "has", "had", "did", "shall", "should", "may", "might", "must", "can", "could", "will", "would", "said", "told",
-           "asked", "went", "made", "know", "see", "looked", "thought", "come", "back", "take", "got", "put", "showed", "felt",
-           "left", "called", "good", "new", "first", "last", "long", "great", "little", "own", "other", "old", "right", "big", "high",
-           "different", "small", "large", "next", "early", "young", "important", "few", "public", "bad", "same", "able", "human",
-           "local", "social", "possible", "whole", "free", "true", "certain", "special", "general", "available", "common", "major",
-           "better", "best", "real", "sure", "clear", "full", "easy", "strong", "likely", "short", "single", "personal", "current",
-           "national", "hard", "major", "political", "large", "small", "happy", "serious", "simple", "right", "left", "central",
-           "recent", "low", "dead", "wide", "late", "close", "fine", "white", "black", "red", "green", "blue", "yellow", "brown",
-           "pink", "orange", "gray", "purple", "gold", "silver", "north", "south", "east", "west", "morning", "night", "day", "year",
-           "week", "month", "hour", "minute", "second", "time", "home", "house", "family", "father", "mother", "child", "friend",
-           "man", "woman", "boy", "girl", "person", "people", "child", "school", "student", "teacher", "work", "job", "office",
-           "money", "car", "city", "country", "road", "water", "food", "air", "fire", "earth", "love", "life", "world", "hand", "eye",
-           "head", "heart", "foot", "leg", "arm", "face", "hair", "body", "mind", "voice", "song", "music", "game", "book", "story",
-           "word", "sentence", "language", "country", "city", "place", "thing", "fact", "idea", "problem", "question", "answer", "reason",
-           "help", "friend", "family", "group", "team", "company", "party", "government", "law", "order", "power", "right", "left"
+            "she", "packed", "twelve", "blue", "pens", "in", "her", "small", "bag", "every",
+            "bird", "sang", "sweet", "songs", "the", "quiet", "dawn", "they", "watched", "clouds",
+            "drift", "across", "golden", "sky", "a", "clever", "mouse", "slipped", "past",
+            "sleepy", "cat", "green", "leaves", "danced", "gently", "warm", "breeze", "he",
+            "quickly", "wrote", "notes", "before", "test", "began", "tall", "man", "wore", "boots",
+             "made", "of", "soft", "leather", "old", "clocks", "ticked", "loudly", "silent",
+             "room", "smiled", "while", "sipping", "tea", "on", "front", "porch", "we", "found",
+             "hidden", "path", "behind", "barn", "sunlight", "streamed", "through", "cracks", "ceiling",
+             "dogs", "barked", "at", "shadows", "moving", "yard", "rain", "tapped", "softly",
+             "against", "window", "glass", "bright", "stars", "twinkled", "above", "valley",
+             "tied", "package", "with", "ribbon", "and", "string", "sudden", "blew", "papers",
+             "off", "desk", "curious", "child", "opened", "every", "single", "drawer", "fresh",
+             "apples", "fell", "from", "heavy", "tree", "limbs", "artist", "painted", "scenes",
+             "memory", "danced", "all", "night", "under", "glowing", "moon"
         ];
-
      
         for (const word of basicWords) {
             commonWords.add(word);
@@ -1097,43 +1087,68 @@
         const s = String(time.getUTCSeconds()).padStart(2, '0');
         const ms = String(time.getUTCMilliseconds()).padStart(3, '0');
     }
+
+    // NEW: Calculate MSD that accounts for typing process
+    function calculateMSD() {
+        const normalize = (str) => str.trim().replace(/\s+/g, ' ');
+        
+        // Base MSD from final result (traditional Levenshtein distance)
+        const baseMSD = calculateLevenshteinDistance(
+            normalize(currentText),
+            normalize(targetSentence)
+        );
+        
+        // Calculate correction penalties
+        const excessKeystrokes = Math.max(0, totalCharsTyped - targetSentence.length);
+        const correctionPenalty = (backspaceCount + excessKeystrokes) * 0.3;
+        
+        // Calculate accuracy penalty based on process, not just final result
+        const processAccuracy = totalCharsTyped > 0 ? correctCharsTyped / totalCharsTyped : 1;
+        const accuracyPenalty = (1 - processAccuracy) * targetSentence.length * 0.4;
+        
+        // Combine all penalties
+        const finalMSD = baseMSD + correctionPenalty + accuracyPenalty;
+        
+        return Math.round(finalMSD); // Round to whole number
+    }
   
-    // Calculate typing metrics
+    // Calculate typing metrics with improved MSD
     function calculateMetrics() {
-   // Normalization function
-   const normalize = (str) => str.trim().replace(/\s+/g, ' ');
-  
-   // Basic WPM calculation
-   const timeMinutes = elapsed / (1000 * 60);
-   const charsPerWord = 5;
-   const rawWpm = Math.round((totalCharsTyped / charsPerWord) / timeMinutes) || 0;
-  
-   // Accuracy calculation
-   const accuracy = totalCharsTyped > 0
-       ? Math.round((correctCharsTyped / totalCharsTyped) * 100)
-       : 100;
-  
-   // Adjusted WPM
-   const adjWpm = Math.round(rawWpm * (accuracy / 100));
-  
-   // MSD calculation with normalization
-   const msd = calculateLevenshteinDistance(
-       normalize(currentText),
-       normalize(targetSentence)
-   );
-  
-   // Debug output
-   console.log("Typed:", JSON.stringify(currentText));
-   console.log("Target:", JSON.stringify(targetSentence));
-   console.log("MSD:", msd);
-  
-   return {
-       wpm: rawWpm,
-       adjWpm: adjWpm,
-       accuracy: accuracy,
-       msd: msd
-   };
-}
+        const normalize = (str) => str.trim().replace(/\s+/g, ' ');
+        
+        // Basic WPM calculation
+        const timeMinutes = elapsed / (1000 * 60);
+        const charsPerWord = 5;
+        const rawWpm = Math.round((totalCharsTyped / charsPerWord) / timeMinutes) || 0;
+        
+        // Process accuracy (characters correct when first typed)
+        const processAccuracy = totalCharsTyped > 0
+            ? Math.round((correctCharsTyped / totalCharsTyped) * 100)
+            : 100;
+        
+        // Use process accuracy for adjusted WPM (more representative of actual performance)
+        const adjWpm = Math.round(rawWpm * (processAccuracy / 100));
+        
+        // Use MSD that accounts for typing process
+        const msd = calculateMSD();
+        
+        // Debug information (you can remove this in production)
+        console.log("Typing Process Debug:");
+        console.log("- Total chars typed:", totalCharsTyped);
+        console.log("- Correct chars (first time):", correctCharsTyped);
+        console.log("- Backspaces used:", backspaceCount);
+        console.log("- Process accuracy:", processAccuracy + "%");
+        console.log("- MSD:", msd);
+        console.log("- Typed:", JSON.stringify(normalize(currentText)));
+        console.log("- Target:", JSON.stringify(normalize(targetSentence)));
+        
+        return {
+            wpm: rawWpm,
+            adjWpm: adjWpm,
+            accuracy: processAccuracy, // Show process accuracy instead of final accuracy
+            msd: msd
+        };
+    }
   
     // Calculate Levenshtein distance (Minimum String Distance)
     function calculateLevenshteinDistance(a, b) {
