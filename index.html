@@ -308,11 +308,11 @@
                 <div class="result-value" id="modal-adj-wpm">0</div>
             </div>
             <div class="result-item">
-                <div class="result-label">Process Accuracy</div>
+                <div class="result-label">Accuracy</div>
                 <div class="result-value" id="modal-accuracy">100%</div>
             </div>
             <div class="result-item">
-                <div class="result-label">MSD</div>
+                <div class="result-label">Min String Distance</div>
                 <div class="result-value" id="modal-msd">0</div>
             </div>
         </div>
@@ -321,26 +321,26 @@
 </div>
 
 <ul id="choices">
-     <li>She packed twelve blue pens in her small bag</li>
-     <li>Every bird sang sweet songs in the quiet dawn</li>
-     <li>They watched clouds drift across the golden sky</li>
-     <li>A clever mouse slipped past the sleepy cat</li>
-     <li>Green leaves danced gently in the warm breeze</li>
-     <li>He quickly wrote notes before the test began</li>
-     <li>The tall man wore boots made of soft leather</li>
-     <li>Old clocks ticked loudly in the silent room</li>
-     <li>She smiled while sipping tea on the front porch</li>
-     <li>We found a hidden path behind the old barn</li>
-     <li>Sunlight streamed through cracks in the ceiling</li>
-     <li>Dogs barked at shadows moving through the yard</li>
-     <li>Rain tapped softly against the window glass</li>
-     <li>Bright stars twinkled above the quiet valley</li>
-     <li>He tied the package with ribbon and string</li>
-     <li>A sudden breeze blew papers off the desk</li>
-     <li>The curious child opened every single drawer</li>
-     <li>Fresh apples fell from the heavy tree limbs</li>
-     <li>The artist painted scenes from her memory</li>
-     <li>They danced all night under the glowing moon</li>
+     <li>She packed twelve blue pens in her small bag.</li>
+     <li>Every bird sang sweet songs in the quiet dawn.</li>
+     <li>They watched clouds drift across the golden sky.</li>
+     <li>A clever mouse slipped past the sleepy cat.</li>
+     <li>Green leaves danced gently in the warm breeze.</li>
+     <li>He quickly wrote notes before the test began.</li>
+     <li>The tall man wore boots made of soft leather.</li>
+     <li>Old clocks ticked loudly in the silent room.</li>
+     <li>She smiled while sipping tea on the front porch.</li>
+     <li>We found a hidden path behind the old barn.</li>
+     <li>Sunlight streamed through cracks in the ceiling.</li>
+     <li>Dogs barked at shadows moving through the yard.</li>
+     <li>Rain tapped softly against the window glass.</li>
+     <li>Bright stars twinkled above the quiet valley.</li>
+     <li>He tied the package with ribbon and string.</li>
+     <li>A sudden breeze blew papers off the desk.</li>
+     <li>The curious child opened every single drawer.</li>
+     <li>Fresh apples fell from the heavy tree limbs.</li>
+     <li>The artist painted scenes from her memory.</li>
+     <li>They danced all night under the glowing moon.</li>
    </ul>
 
 <script>
@@ -1087,68 +1087,43 @@
         const s = String(time.getUTCSeconds()).padStart(2, '0');
         const ms = String(time.getUTCMilliseconds()).padStart(3, '0');
     }
-
-    // NEW: Calculate MSD that accounts for typing process
-    function calculateMSD() {
-        const normalize = (str) => str.trim().replace(/\s+/g, ' ');
-        
-        // Base MSD from final result (traditional Levenshtein distance)
-        const baseMSD = calculateLevenshteinDistance(
-            normalize(currentText),
-            normalize(targetSentence)
-        );
-        
-        // Calculate correction penalties
-        const excessKeystrokes = Math.max(0, totalCharsTyped - targetSentence.length);
-        const correctionPenalty = (backspaceCount + excessKeystrokes) * 0.3;
-        
-        // Calculate accuracy penalty based on process, not just final result
-        const processAccuracy = totalCharsTyped > 0 ? correctCharsTyped / totalCharsTyped : 1;
-        const accuracyPenalty = (1 - processAccuracy) * targetSentence.length * 0.4;
-        
-        // Combine all penalties
-        const finalMSD = baseMSD + correctionPenalty + accuracyPenalty;
-        
-        return Math.round(finalMSD); // Round to whole number
-    }
   
-    // Calculate typing metrics with improved MSD
+    // Calculate typing metrics
     function calculateMetrics() {
-        const normalize = (str) => str.trim().replace(/\s+/g, ' ');
-        
-        // Basic WPM calculation
-        const timeMinutes = elapsed / (1000 * 60);
-        const charsPerWord = 5;
-        const rawWpm = Math.round((totalCharsTyped / charsPerWord) / timeMinutes) || 0;
-        
-        // Process accuracy (characters correct when first typed)
-        const processAccuracy = totalCharsTyped > 0
-            ? Math.round((correctCharsTyped / totalCharsTyped) * 100)
-            : 100;
-        
-        // Use process accuracy for adjusted WPM (more representative of actual performance)
-        const adjWpm = Math.round(rawWpm * (processAccuracy / 100));
-        
-        // Use MSD that accounts for typing process
-        const msd = calculateMSD();
-        
-        // Debug information (you can remove this in production)
-        console.log("Typing Process Debug:");
-        console.log("- Total chars typed:", totalCharsTyped);
-        console.log("- Correct chars (first time):", correctCharsTyped);
-        console.log("- Backspaces used:", backspaceCount);
-        console.log("- Process accuracy:", processAccuracy + "%");
-        console.log("- MSD:", msd);
-        console.log("- Typed:", JSON.stringify(normalize(currentText)));
-        console.log("- Target:", JSON.stringify(normalize(targetSentence)));
-        
-        return {
-            wpm: rawWpm,
-            adjWpm: adjWpm,
-            accuracy: processAccuracy, // Show process accuracy instead of final accuracy
-            msd: msd
-        };
-    }
+   // Normalization function
+   const normalize = (str) => str.trim().replace(/\s+/g, ' ');
+  
+   // Basic WPM calculation
+   const timeMinutes = elapsed / (1000 * 60);
+   const charsPerWord = 5;
+   const rawWpm = Math.round((totalCharsTyped / charsPerWord) / timeMinutes) || 0;
+  
+   // Accuracy calculation
+   const accuracy = totalCharsTyped > 0
+       ? Math.round((correctCharsTyped / totalCharsTyped) * 100)
+       : 100;
+  
+   // Adjusted WPM
+   const adjWpm = Math.round(rawWpm * (accuracy / 100));
+  
+   // MSD calculation with normalization
+   const msd = calculateLevenshteinDistance(
+       normalize(currentText),
+       normalize(targetSentence)
+   );
+  
+   // Debug output
+   console.log("Typed:", JSON.stringify(currentText));
+   console.log("Target:", JSON.stringify(targetSentence));
+   console.log("MSD:", msd);
+  
+   return {
+       wpm: rawWpm,
+       adjWpm: adjWpm,
+       accuracy: accuracy,
+       msd: msd
+   };
+}
   
     // Calculate Levenshtein distance (Minimum String Distance)
     function calculateLevenshteinDistance(a, b) {
